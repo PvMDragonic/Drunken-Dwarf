@@ -43,6 +43,12 @@ async def on_message(message):
         await enviar_sugestao(message)
         return
 
+    if message.mention_everyone or '@here' in message.content:
+        msg = message.content.lower()
+        if 'nitro' in msg and 'link' in msg:
+            await message.delete()
+            return
+
     await bot.process_commands(message)
 
 bot.run(TOKEN)
