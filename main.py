@@ -45,7 +45,7 @@ async def on_message(message):
 
     if message.mention_everyone or '@here' in message.content:
         msg = message.content.lower()
-        if 'nitro' in msg and 'link' in msg:
+        if 'free' in msg and 'discord' in msg and 'nitro' in msg:
             await message.delete()
             return
 
