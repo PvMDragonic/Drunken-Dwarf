@@ -10,6 +10,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents = intents)
 
+# Canal de Moderação.
+MODERACAO = bot.get_channel(710255855316238447)
+
 @bot.command()
 async def sortear(ctx, *args):
     embed = discord.Embed(
@@ -39,15 +42,15 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if message.channel.id == 866475904905773056: # DKDW/caixa-de-sugestões
-        await enviar_sugestao(message)
-        return
-
     if message.mention_everyone or '@here' in message.content:
         msg = message.content.lower()
-        if 'free' in msg and 'discord' in msg and 'nitro' in msg:
-            await message.delete()
-            return
+        if all(palavra in msg for palavra in ['free', 'discord', 'nitro']):
+            # DKDW/moderação
+            bot.get_channel(710255855316238447).send(f'{message.author} tentou enviar spam de Discord Nitro no canal {message.channel}.')
+            return await message.delete()
+        
+    if message.channel.id == 866475904905773056: # DKDW/caixa-de-sugestões
+        return await enviar_sugestao(message)
 
     await bot.process_commands(message)
 
