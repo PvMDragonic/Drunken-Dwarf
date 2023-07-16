@@ -3,15 +3,14 @@ from discord.ext import commands
 from random import randint
 import discord
 import datetime
+import nomes
 
 TOKEN = open('token.txt', 'r').readline().rstrip()
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot = commands.Bot(command_prefix='!', intents = intents)
-
-# Canal de Moderação.
-MODERACAO = bot.get_channel(710255855316238447)
 
 @bot.command()
 async def sortear(ctx, *args):
@@ -29,6 +28,40 @@ async def enviar_sugestao(message):
     await bot.get_channel(866476425061335120).send(embed = embed) # DKDW/reclames-do-povo
     await message.delete()
     await message.author.send("A sugestão foi enviada para a Staff do Clã.") 
+
+async def adicionar_cargo(message):
+    # Nomes no rune só vão até 12 caracteres.
+    if len(message.content) > 12:
+        return
+    
+    meliantes = await nomes.buscar_meliantes()
+    membros = await nomes.buscar_membros()
+
+    if not meliantes or not membros:
+        return
+    
+    DKDW = bot.get_guild(296764515335405570)
+    MODERACAO = bot.get_channel(710255855316238447)
+    CARGO_STAFF = DKDW.get_role(296780203940904960)
+    CARGO_MEMBRO = DKDW.get_role(296780850895388672)
+    CARGO_GUEST = DKDW.get_role(378242013574987776)
+    
+    nome = message.author.name
+    nome_sv = message.author.display_name
+
+    if any(nome in meliantes for nome in [nome, nome_sv, message.content]):
+        return await MODERACAO.send(f'Usuário "{nome_sv}" tentou entrar no servidor como meliante da Black List {message.content}! {CARGO_STAFF.mention}')
+    
+    for member in DKDW.members:
+        if member.name in message.content or member.display_name in message.content:
+            return await MODERACAO.send(f'Usuário "{nome_sv}" tentou entrar no servidor se passando por {member.display_name}! {CARGO_STAFF.mention}')
+
+    if message.content in membros:
+        await message.author.add_roles(CARGO_MEMBRO)
+    else:
+        await message.author.add_roles(CARGO_GUEST)
+
+    await message.author.edit(nick = message.content)
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -48,9 +81,12 @@ async def on_message(message):
             # DKDW/moderação
             bot.get_channel(710255855316238447).send(f'{message.author} tentou enviar spam de Discord Nitro no canal {message.channel}.')
             return await message.delete()
-        
+            
     if message.channel.id == 866475904905773056: # DKDW/caixa-de-sugestões
         return await enviar_sugestao(message)
+
+    if message.channel.id == 589600587742707732: # DKDW/bem-vindos
+        return await adicionar_cargo(message)
 
     await bot.process_commands(message)
 
