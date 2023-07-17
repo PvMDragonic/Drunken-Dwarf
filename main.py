@@ -23,7 +23,7 @@ async def sortear(ctx, *args):
     await ctx.message.channel.send(embed = embed)
 
 async def enviar_sugestao(message):
-    embed = discord.Embed(title = f"{message.author} sugeriu:", description = message.content, color = 0x7a8ff5)
+    embed = discord.Embed(title = f"{message.author.display_name} sugeriu:", description = message.content, color = 0x7a8ff5)
     embed.set_footer(text=f"Enviado em: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     await bot.get_channel(866476425061335120).send(embed = embed) # DKDW/reclames-do-povo
     await message.delete()
@@ -81,7 +81,7 @@ async def on_message(message):
         msg = message.content.lower()
         if all(palavra in msg for palavra in ['free', 'discord', 'nitro']):
             # DKDW/moderação
-            bot.get_channel(710255855316238447).send(f'{message.author} tentou enviar spam de Discord Nitro no canal {message.channel}.')
+            bot.get_channel(710255855316238447).send(f'{message.author.display_name} tentou enviar spam de Discord Nitro no canal {message.channel}.')
             return await message.delete()
             
     if message.channel.id == 866475904905773056: # DKDW/caixa-de-sugestões
