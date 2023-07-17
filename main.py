@@ -53,6 +53,8 @@ async def adicionar_cargo(message):
         return await MODERACAO.send(f'Usuário "{nome_sv}" tentou entrar no servidor como meliante da Black List {message.content}! {CARGO_STAFF.mention}')
     
     for member in DKDW.members:
+        if member == message.author:
+            continue
         if member.name in message.content or member.display_name in message.content:
             return await MODERACAO.send(f'Usuário "{nome_sv}" tentou entrar no servidor se passando por {member.display_name}! {CARGO_STAFF.mention}')
 
