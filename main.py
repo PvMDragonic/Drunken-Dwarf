@@ -138,14 +138,22 @@ async def on_message(message):
         msg = message.content.lower()
         if all(palavra in msg for palavra in ['free', 'discord', 'nitro']):
             # DKDW/moderação
-            bot.get_channel(710255855316238447).send(f'{message.author.display_name} tentou enviar spam de Discord Nitro no canal {message.channel}.')
+            bot.get_channel(710255855316238447).send(
+                f'{message.author.display_name} tentou enviar spam de Discord Nitro no canal {message.channel}.'
+            )
             return await message.delete()
             
+    if message.author.bot:
+        return
+
     if message.channel.id == 866475904905773056: # DKDW/caixa-de-sugestões
         return await enviar_sugestao(message)
 
     if message.channel.id == 589600587742707732: # DKDW/bem-vindos
         return await adicionar_cargo(message)
+
+    if not message.author.guild_permissions.administrator:
+        return
 
     await bot.process_commands(message)
 
