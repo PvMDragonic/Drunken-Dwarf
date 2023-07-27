@@ -1,3 +1,4 @@
+from discord.ext.commands.errors import MissingRequiredArgument, BadArgument
 from discord.ext.commands import CommandNotFound
 from discord.ext import commands
 from random import randint
@@ -21,13 +22,13 @@ async def cmd(ctx):
     )
 
     embed.add_field(
-        name = '!sortear X Y', 
+        name = '!sortear [valor mínimo] [valor máximo]', 
         value = 'Soteia um número entre X e Y.\n᲼᲼', 
         inline = False
     )
 
     embed.add_field(
-        name = '!limpar X nome', 
+        name = '!limpar [quantia] [nome]', 
         value = 'Limpa X número de mensagens.\nO nome é opcional para limpar apenas de alguém específico.', 
         inline = False
     )
@@ -125,6 +126,14 @@ async def adicionar_cargo(message):
 async def on_command_error(ctx, error):
     if isinstance(error, CommandNotFound):
         return
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.channel.send(
+            f'Você esqueceu de especificar um ou mais parâmetros para o comando! {ctx.message.author.mention}'
+        )
+    if isinstance(error, BadArgument):
+        await ctx.channel.send(
+            f'Você precisa especificar uma quantia válida para as mensagens! {ctx.message.author.mention}'
+        )
     raise error
 
 @bot.event
