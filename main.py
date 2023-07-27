@@ -14,6 +14,32 @@ intents.members = True
 bot = commands.Bot(command_prefix='!', intents = intents)
 
 @bot.command()
+async def cmd(ctx):
+    embed = discord.Embed(
+        title = "LISTA DE COMANDOS",  
+        color = 0x7a8ff5
+    )
+
+    embed.add_field(
+        name = '!sortear X Y', 
+        value = 'Soteia um número entre X e Y.\n᲼᲼', 
+        inline = False
+    )
+
+    embed.add_field(
+        name = '!limpar X nome', 
+        value = 'Limpa X número de mensagens.\nO nome é opcional para limpar apenas de alguém específico.', 
+        inline = False
+    )
+
+    embed.set_thumbnail(url=bot.user.avatar)
+
+    await ctx.channel.send(
+        ctx.message.author.mention, 
+        embed = embed
+    )
+
+@bot.command()
 async def limpar(ctx, quantia: int, *user):
     quantia = int(quantia)
 
@@ -103,6 +129,7 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_ready():
+    await bot.change_presence(activity = discord.Game(name = '!cmd'))
     print(f'>> {bot.user} on-line!')
 
 @bot.event
