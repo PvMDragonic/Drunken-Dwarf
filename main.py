@@ -1,8 +1,9 @@
 from discord.ext.commands import CommandNotFound
 from discord.ext import commands
 from random import randint
-import discord
 import datetime
+import asyncio
+import discord
 import nomes
 
 TOKEN = open('token.txt', 'r').readline().rstrip()
@@ -11,6 +12,35 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents = intents)
+
+@bot.command()
+async def limpar(ctx, quantia: int, *user):
+    quantia = int(quantia)
+
+    if user:
+        usuario = discord.utils.get(ctx.guild.members, nick = " ".join(user)) or discord.utils.get(ctx.guild.members, global_name = " ".join(user))
+        deletados = 0
+
+        def deletar_msg(message):
+            nonlocal deletados
+
+            if deletados >= quantia:
+                return False
+
+            if message.author.id != usuario.id:
+                return False
+            
+            deletados += 1
+            return True
+
+        await ctx.channel.purge(limit = 100, check = deletar_msg)
+        await ctx.channel.send(f'{deletados} mensagen(s) deletada(s) com sucesso!')
+    else:
+        await ctx.channel.purge(limit = quantia + 1)
+        await ctx.channel.send(f'{quantia} mensagen(s) deletada(s) com sucesso!')
+
+    await asyncio.sleep(5)
+    await ctx.channel.purge(limit = 1) 
 
 @bot.command()
 async def sortear(ctx, *args):
