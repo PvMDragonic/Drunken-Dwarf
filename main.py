@@ -138,7 +138,7 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity = discord.Game(name = '!cmd'))
+    await bot.change_presence(activity = discord.Game(name = 'no melhor clã BR'))
     print(f'>> {bot.user} on-line!')
 
 @bot.event
