@@ -14,6 +14,31 @@ intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents = intents)
 
+try:
+    with open('dkdw.txt', "r") as arqv:
+        msg_bem_vindos = "".join(arqv.readlines())
+except FileNotFoundError:
+    print("Arquivo 'dkdw.txt' não encontrado!")
+    msg_bem_vindos = "Seja bem-vindo(a) {}!"
+
+@bot.command()
+async def teste(ctx):
+    await ctx.channel.send(msg_bem_vindos.replace("{}", ctx.message.author.mention))
+
+@bot.command()
+async def mensagem(ctx):
+    global msg_bem_vindos
+
+    # Remove o comando da mensagem.
+    msg_bem_vindos = " ".join(ctx.message.content.split(" ")[1:])
+
+    with open('dkdw.txt', "w") as arqv:
+        arqv.write(msg_bem_vindos)
+
+    await ctx.channel.send(
+        f'Uma nova mensagem de boas-vindas foi definida! Use `!teste` para ver como ficou. {ctx.message.author.mention}'
+    )
+
 @bot.command()
 async def cmd(ctx):
     embed = discord.Embed(
@@ -29,11 +54,23 @@ async def cmd(ctx):
 
     embed.add_field(
         name = '!limpar [quantia] [nome]', 
-        value = 'Limpa X número de mensagens.\nO nome é opcional para limpar apenas de alguém específico.', 
+        value = 'Limpa X número de mensagens.\nO nome é opcional para limpar apenas de alguém específico.\n᲼᲼', 
         inline = False
     )
 
-    embed.set_thumbnail(url=bot.user.avatar)
+    embed.add_field(
+        name = '!mensagem [mensagem]', 
+        value = 'Define uma nova mensagem de boas-vindas.\nUse "{}" para definir onde a menção vai ficar.\n᲼᲼', 
+        inline = False
+    )
+
+    embed.add_field(
+        name = '!teste', 
+        value = 'Testa a mensagem de boas-vindas.', 
+        inline = False
+    )
+
+    embed.set_thumbnail(url = bot.user.avatar)
 
     await ctx.channel.send(
         ctx.message.author.mention, 
@@ -135,6 +172,12 @@ async def on_command_error(ctx, error):
             f'Você precisa especificar uma quantia válida para as mensagens! {ctx.message.author.mention}'
         )
     raise error
+
+@bot.event
+async def on_member_join(member):
+    await bot.get_guild(296764515335405570).get_channel(589600587742707732).send(
+        msg_bem_vindos.replace("{}", member.mention)
+    )
 
 @bot.event
 async def on_ready():
