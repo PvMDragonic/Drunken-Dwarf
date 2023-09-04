@@ -6,6 +6,7 @@ import datetime
 import asyncio
 import discord
 import nomes
+import json
 
 TOKEN = open('token.txt', 'r').readline().rstrip()
 
@@ -15,11 +16,24 @@ intents.members = True
 bot = commands.Bot(command_prefix='!', intents = intents)
 
 try:
-    with open('dkdw.txt', "r") as arqv:
-        msg_bem_vindos = "".join(arqv.readlines())
+    with open('dkdw.json', "r") as arqv:
+        enviar_boas_vindas, msg_bem_vindos = json.load(arqv)
 except FileNotFoundError:
-    print("Arquivo 'dkdw.txt' não encontrado!")
     msg_bem_vindos = "Seja bem-vindo(a) {}!"
+    enviar_boas_vindas = False
+
+@bot.command()
+async def ativar(ctx):
+    global enviar_boas_vindas
+
+    enviar_boas_vindas = not enviar_boas_vindas
+
+    with open('dkdw.json', "w") as arqv:
+        json.dump([enviar_boas_vindas, msg_bem_vindos], arqv)
+
+    await ctx.channel.send(
+        f'Mensagem de boas-vindas {"ativadas" if enviar_boas_vindas else "desativadas"}! {ctx.message.author.mention}'
+    )
 
 @bot.command()
 async def teste(ctx):
@@ -32,8 +46,8 @@ async def mensagem(ctx):
     # Remove o comando da mensagem.
     msg_bem_vindos = " ".join(ctx.message.content.split(" ")[1:])
 
-    with open('dkdw.txt', "w") as arqv:
-        arqv.write(msg_bem_vindos)
+    with open('dkdw.json', "w") as arqv:
+        json.dump([enviar_boas_vindas, msg_bem_vindos], arqv)
 
     await ctx.channel.send(
         f'Uma nova mensagem de boas-vindas foi definida! Use `!teste` para ver como ficou. {ctx.message.author.mention}'
@@ -55,6 +69,12 @@ async def cmd(ctx):
     embed.add_field(
         name = '!limpar [quantia] [nome]', 
         value = 'Limpa X número de mensagens.\nO nome é opcional para limpar apenas de alguém específico.\n᲼᲼', 
+        inline = False
+    )
+
+    embed.add_field(
+        name = '!ativar', 
+        value = 'Ativa (ou desativa, se já estiver ativado) mensagem de boas-vindas.\n᲼᲼', 
         inline = False
     )
 
@@ -184,9 +204,10 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_member_join(member):
-    await bot.get_guild(296764515335405570).get_channel(589600587742707732).send(
-        msg_bem_vindos.replace("{}", member.mention)
-    )
+    if enviar_boas_vindas:
+        await bot.get_guild(296764515335405570).get_channel(589600587742707732).send(
+            msg_bem_vindos.replace("{}", member.mention)
+        )
 
 @bot.event
 async def on_ready():
