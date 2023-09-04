@@ -123,9 +123,18 @@ async def enviar_sugestao(message):
     await message.delete()
     await message.author.send("A sugestão foi enviada para a Staff do Clã.") 
 
+def verificar_cargo(cargos_sv, cargos_user):
+    membros = discord.utils.get(cargos_sv, name = "Membros")
+    visitantes = discord.utils.get(cargos_sv, name = "Visitantes")
+    
+    return any(role in cargos_user for role in [membros, visitantes])
+
 async def adicionar_cargo(message):
     # Nomes no rune só vão até 12 caracteres.
     if len(message.content) > 12:
+        return
+    
+    if verificar_cargo(message.guild.roles, message.author.roles):
         return
     
     meliantes = await nomes.buscar_meliantes()
