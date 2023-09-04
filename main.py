@@ -129,7 +129,10 @@ async def limpar(ctx, quantia: int, *user):
         await ctx.channel.send(f'{quantia} mensagen(s) deletada(s) com sucesso!')
 
     await asyncio.sleep(5)
-    await ctx.channel.purge(limit = 1) 
+    await ctx.channel.purge(
+        limit = 5, 
+        check = lambda message: message.author.id == bot.user.id
+    ) 
 
 @bot.command()
 async def sortear(ctx, *args):
