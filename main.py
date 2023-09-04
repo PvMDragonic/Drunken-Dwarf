@@ -67,8 +67,8 @@ async def cmd(ctx):
     )
 
     embed.add_field(
-        name = '!limpar [quantia] [nome]', 
-        value = 'Limpa X número de mensagens.\nO nome é opcional para limpar apenas de alguém específico.\n᲼᲼', 
+        name = '!limpar [quantia] [nome/marcação]', 
+        value = 'Limpa X número de mensagens.\nO nome/marcação é opcional para limpar apenas de alguém específico.\n᲼᲼', 
         inline = False
     )
 
@@ -98,11 +98,16 @@ async def cmd(ctx):
     )
 
 @bot.command()
-async def limpar(ctx, quantia: int, *user):
+async def limpar(ctx, quantia: int, *user):    
     quantia = int(quantia)
 
     if user:
-        usuario = discord.utils.get(ctx.guild.members, nick = " ".join(user)) or discord.utils.get(ctx.guild.members, global_name = " ".join(user))
+        if user[0].startswith('<@'):
+            usuario = int(user[0][2:-1])
+        else:
+            usuario = discord.utils.get(ctx.guild.members, nick = " ".join(user)) or discord.utils.get(ctx.guild.members, global_name = " ".join(user))
+            usuario = usuario.id
+
         deletados = 0
 
         def deletar_msg(message):
@@ -111,7 +116,7 @@ async def limpar(ctx, quantia: int, *user):
             if deletados >= quantia:
                 return False
 
-            if message.author.id != usuario.id:
+            if message.author.id != usuario:
                 return False
             
             deletados += 1
