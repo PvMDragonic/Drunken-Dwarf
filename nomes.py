@@ -21,8 +21,9 @@ async def buscar_meliantes() -> set[str] | None:
         conteudo = html.fromstring(requisicao)
         linhas = conteudo.xpath('.//td')
         return set(re.sub(r"\([^()]*\)", "", nome).strip() for elem in linhas for nome in elem.text_content().split("-"))
-    except Exception as e:
-        print(e)
+    except Exception as erro:
+        print(erro)
+        return None
 
 print
 
@@ -36,18 +37,14 @@ async def buscar_membros() -> set[str] | None:
         None:
             Caso aconteça algum erro durante o scrap.
     """
-    
-    try:   
-        membros = set()
-        for i in range(1, 33):
-            pagina_dkdw = f'https://secure.runescape.com/m=clan-hiscores/l=3/a=9/members.ws?clanId=26687&ranking=-1&pageSize=15&pageNum={i}'
-            requisicao = requests.get(pagina_dkdw).content
-            conteudo = html.fromstring(requisicao)
-            nomes = conteudo.xpath('.//span[@class="name"]')
 
-            for nome in nomes:
-                membros.add(nome.text_content().replace('\xa0', ' '))
+    response = requests.get('http://services.runescape.com/m=clan-hiscores/members_lite.ws?clanName=Drunken+Dwarf')
 
-        return membros    
-    except Exception as e:
-        print(e)
+    if response.status_code == 200:
+        clan = response.content.decode('utf-8', errors='replace').replace('\ufffd', ' ')
+        nomes = clan.split('\n')
+        nomes = [nome.split(',')[0] for nome in nomes]
+        return nomes[1:-1]
+    else:
+        print("Erro na coleta de membros: ", response.status_code)
+        return None
