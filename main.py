@@ -6,48 +6,36 @@ import datetime
 import asyncio
 import discord
 import nomes
-import json
 
-TOKEN = open('token.txt', 'r').readline().rstrip()
+from dados import DKDW
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents = intents)
 
-try:
-    with open('dkdw.json', "r") as arqv:
-        enviar_boas_vindas, msg_bem_vindos = json.load(arqv)
-except FileNotFoundError:
-    msg_bem_vindos = "Seja bem-vindo(a) {}!"
-    enviar_boas_vindas = False
+dkdw = DKDW()
 
 @bot.command()
 async def ativar(ctx):
-    global enviar_boas_vindas
+    dkdw.enviar_boas_vindas = not dkdw.enviar_boas_vindas
 
-    enviar_boas_vindas = not enviar_boas_vindas
-
-    with open('dkdw.json', "w") as arqv:
-        json.dump([enviar_boas_vindas, msg_bem_vindos], arqv)
+    dkdw.salvar_dados()
 
     await ctx.channel.send(
-        f'Mensagem de boas-vindas {"ativadas" if enviar_boas_vindas else "desativadas"}! {ctx.message.author.mention}'
+        f'Mensagem de boas-vindas {"ativadas" if dkdw.enviar_boas_vindas else "desativadas"}! {ctx.message.author.mention}'
     )
 
 @bot.command()
 async def teste(ctx):
-    await ctx.channel.send(msg_bem_vindos.replace("{}", ctx.message.author.mention))
+    await ctx.channel.send(dkdw.boas_vindas(ctx.message.author.mention))
 
 @bot.command()
 async def mensagem(ctx):
-    global msg_bem_vindos
-
     # Remove o comando da mensagem.
-    msg_bem_vindos = " ".join(ctx.message.content.split(" ")[1:])
+    dkdw.msg_bem_vindos = " ".join(ctx.message.content.split(" ")[1:])
 
-    with open('dkdw.json', "w") as arqv:
-        json.dump([enviar_boas_vindas, msg_bem_vindos], arqv)
+    dkdw.salvar_dados()
 
     await ctx.channel.send(
         f'Uma nova mensagem de boas-vindas foi definida! Use `!teste` para ver como ficou. {ctx.message.author.mention}'
@@ -212,9 +200,9 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_member_join(member):
-    if enviar_boas_vindas:
+    if dkdw.enviar_boas_vindas:
         await bot.get_guild(296764515335405570).get_channel(589600587742707732).send(
-            msg_bem_vindos.replace("{}", member.mention)
+            dkdw.boas_vindas(member.mention)
         )
 
 @bot.event
@@ -247,4 +235,4 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-bot.run(TOKEN)
+bot.run(dkdw.token)
