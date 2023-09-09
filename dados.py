@@ -14,3 +14,6 @@ class DKDW():
 
     def boas_vindas(self, mention: str):
         return self.msg_bem_vindos.replace("{}", mention)
+    
+    def despedida(self, mention: str):
+        return self.msg_despedida.replace("{}", mention)

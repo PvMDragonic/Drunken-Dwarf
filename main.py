@@ -12,34 +12,64 @@ from dados import DKDW
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-bot = commands.Bot(command_prefix='!', intents = intents)
+bot = commands.Bot(command_prefix = '!', intents = intents)
 
 dkdw = DKDW()
 
 @bot.command()
-async def ativar(ctx):
-    dkdw.enviar_boas_vindas = not dkdw.enviar_boas_vindas
-
-    dkdw.salvar_dados()
-
-    await ctx.channel.send(
-        f'Mensagem de boas-vindas {"ativadas" if dkdw.enviar_boas_vindas else "desativadas"}! {ctx.message.author.mention}'
-    )
+async def ativar(ctx, opc: str):
+    if opc not in ('1', '2'):
+        return await ctx.channel.send(
+            f'Digite 1 para boas-vindas ou 2 para despedida! {ctx.message.author.mention}'
+        )
+    
+    if opc == '1':
+        dkdw.enviar_boas_vindas = not dkdw.enviar_boas_vindas
+        dkdw.salvar_dados()
+        await ctx.channel.send(
+            f'Mensagem de boas-vindas __{"ativada" if dkdw.enviar_boas_vindas else "desativada"}__! {ctx.message.author.mention}'
+        )
+    else:
+        dkdw.enviar_despedida = not dkdw.enviar_despedida
+        dkdw.salvar_dados()
+        await ctx.channel.send(
+            f'Mensagem de despedida __{"ativada" if dkdw.enviar_despedida else "desativada"}__! {ctx.message.author.mention}'
+        )
 
 @bot.command()
-async def teste(ctx):
-    await ctx.channel.send(dkdw.boas_vindas(ctx.message.author.mention))
+async def teste(ctx, opc: str):
+    if opc not in ('1', '2'):
+        return await ctx.channel.send(
+            f'Digite 1 para boas-vindas ou 2 para despedida! {ctx.message.author.mention}'
+        )
+    
+    if opc == '1':
+        await ctx.channel.send(dkdw.boas_vindas(ctx.message.author.mention))
+    else:
+        await ctx.channel.send(dkdw.despedida(ctx.message.author.mention))
 
 @bot.command()
-async def mensagem(ctx):
+async def mensagem(ctx, opc: str):
+    if opc not in ('1', '2'):
+        return await ctx.channel.send(
+            f'Digite 1 para boas-vindas ou 2 para despedida! {ctx.message.author.mention}'
+        )
+
     # Remove o comando da mensagem.
-    dkdw.msg_bem_vindos = " ".join(ctx.message.content.split(" ")[1:])
+    mensagem = " ".join(ctx.message.content.split(" ")[1:])
 
-    dkdw.salvar_dados()
-
-    await ctx.channel.send(
-        f'Uma nova mensagem de boas-vindas foi definida! Use `!teste` para ver como ficou. {ctx.message.author.mention}'
-    )
+    if opc == '1':
+        dkdw.msg_bem_vindos = mensagem
+        dkdw.salvar_dados()
+        await ctx.channel.send(
+            f'Uma nova mensagem de boas-vindas foi definida! Use `!teste 1` para ver como ficou. {ctx.message.author.mention}'
+        )
+    else:
+        dkdw.msg_despedida = mensagem
+        dkdw.salvar_dados()
+        await ctx.channel.send(
+            f'Uma nova mensagem de despedida foi definida! Use `!teste 2` para ver como ficou. {ctx.message.author.mention}'
+        )
 
 @bot.command()
 async def cmd(ctx):
@@ -61,20 +91,20 @@ async def cmd(ctx):
     )
 
     embed.add_field(
-        name = '!ativar', 
-        value = 'Ativa (ou desativa, se já estiver ativado) mensagem de boas-vindas.\n᲼᲼', 
+        name = '!ativar [opção]', 
+        value = 'Ativa (ou desativa, se já estiver ativado) mensagem de boas-vindas/despedida.\nOpção 1 para boas-vindas; 2 para despedida.\n᲼᲼', 
         inline = False
     )
 
     embed.add_field(
-        name = '!mensagem [mensagem]', 
-        value = 'Define uma nova mensagem de boas-vindas.\nUse "{}" para definir onde a menção vai ficar.\n᲼᲼', 
+        name = '!mensagem [mensagem] [opção]', 
+        value = 'Define uma nova mensagem de boas-vindas.\nUse "{}" para definir onde a menção vai ficar.\nOpção 1 para boas-vindas; 2 para despedida.\n᲼᲼', 
         inline = False
     )
 
     embed.add_field(
-        name = '!teste', 
-        value = 'Testa a mensagem de boas-vindas.', 
+        name = '!teste [opção]', 
+        value = 'Testa a mensagem de boas-vindas.\nOpção 1 para boas-vindas; 2 para despedida.', 
         inline = False
     )
 
@@ -203,6 +233,13 @@ async def on_member_join(member):
     if dkdw.enviar_boas_vindas:
         await bot.get_guild(296764515335405570).get_channel(589600587742707732).send(
             dkdw.boas_vindas(member.mention)
+        )
+
+@bot.event
+async def on_member_remove(member):
+    if dkdw.enviar_despedida:
+        await bot.get_guild(296764515335405570).get_channel(589600587742707732).send(
+            dkdw.despedida(member.name)
         )
 
 @bot.event
