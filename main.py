@@ -140,6 +140,7 @@ async def limpar(ctx, quantia: int, *user):
             deletados += 1
             return True
 
+        await ctx.channel.purge(limit = 1) # Limpa o comando de limpar.
         await ctx.channel.purge(limit = 100, check = deletar_msg)
         await ctx.channel.send(f'{deletados} mensagen(s) deletada(s) com sucesso!')
     else:
