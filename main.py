@@ -215,6 +215,47 @@ async def adicionar_cargo(message):
 
     await message.author.edit(nick = message.content)
 
+async def enviar_gratz(message):
+    if not message.attachments:
+        return
+    
+    for attachment in message.attachments:
+        # Print geralmente é salvo em png.
+        if not attachment.filename.lower().endswith('png'):
+            continue
+
+        # 'message.channel.history' é um async_generator.
+        mensagens_hoje = [msg async for msg in message.channel.history(limit = 10)][1:]
+        hoje = datetime.datetime.now().date()
+        author = message.author.id
+
+        for msg in mensagens_hoje:
+            if msg.author.id == author and msg.attachments:
+                # Estragar a alegria do Morango tentando spammar o bot.
+                if datetime.datetime.now(datetime.timezone.utc) - msg.created_at < datetime.timedelta(minutes = 1):
+                    return 
+
+        saques_hoje = sum([
+            True
+            for index, msg in enumerate(mensagens_hoje)
+            if msg.author.id == author 
+                and msg.attachments 
+                and msg.created_at.date() == hoje
+                # Ignora prints que caíram no cooldown de 1 minuto acima.
+                and mensagens_hoje[index - 1].author.id == 1023385609466818590 
+        ])
+        
+        return await message.channel.send(
+            {
+                0 : f'Gratzzzzzzzzzzzzzz! :partying_face: {message.author.mention}',
+                1 : f'Gratzzzzzzzzzzzzzzzzzzzzz!! :partying_face: :partying_face: {message.author.mention}',
+                2 : f'GRATZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ!!! :partying_face: :partying_face: :partying_face: {message.author.mention}'
+            }.get(
+                saques_hoje,
+                f'w0000000000000000000000000000000t {":exploding_head: " * saques_hoje} {saques_hoje}º drop hoje{"!" * saques_hoje} {message.author.mention}'
+            )
+        ) 
+
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, CommandNotFound):
@@ -271,6 +312,9 @@ async def on_message(message):
 
     if message.channel.id == 589600587742707732: # DKDW/bem-vindos
         return await adicionar_cargo(message)
+    
+    if message.channel.id == 811639954442420235: # DKDW/drops-e-conquistas
+        return await enviar_gratz(message)
 
     if not message.author.guild_permissions.administrator:
         return
