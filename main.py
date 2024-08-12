@@ -291,18 +291,28 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if message.mention_everyone or '@here' in message.content:
-        mensagem = set(message.content.lower().split(" "))
-        cringe = set(['free', 'discord', 'nitro', 'giveaway', 'teen', 'nsfw', 'sex', 'porn', 'nude', 'nudes', 'onlyfan', 'onlyfans'])
-        comuns = mensagem.intersection(cringe)
+    if '@everyone' in message.content or '@here' in message.content:
+        ids = [
+            296779510089777152, # 'Moderador
+            296780203940904960, # 'Staff'
+            296780473236193280  # 'BOTS'
+        ]
+        cargos_id = [role.id for role in message.author.roles]
+        cargos_encontrados = [role_id for role_id in cargos_id if role_id in ids]
+        if cargos_encontrados:
+            return
 
-        # Ao menos 2 palavras de 'cringe' estão na mensagem.
-        if len(comuns) >= 2:
-            # DKDW/moderação
-            bot.get_channel(710255855316238447).send(
-                f'{message.author.display_name} tentou enviar spam de Discord Nitro no canal {message.channel}.'
-            )
-            return await message.delete()
+        links = ["https://", "http://"]
+        links_encontrados = [ele for ele in links if(ele in message.content)]
+        if not links_encontrados:
+            return 
+        
+        await message.delete()
+
+        # DKDW/moderação
+        return await bot.get_channel(1211472248326856724).send(
+            f'{message.author.display_name} tentou enviar spam de Discord Nitro no canal {message.channel}.'
+        )
             
     if message.author.bot:
         return
