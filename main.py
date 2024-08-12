@@ -311,7 +311,7 @@ async def on_message(message):
 
         # DKDW/moderação
         return await bot.get_channel(1211472248326856724).send(
-            f'{message.author.display_name} tentou enviar spam de Discord Nitro no canal {message.channel}.'
+            f'{message.author.mention} tentou enviar spam no canal {message.channel.mention}.'
         )
             
     if message.author.bot:
