@@ -276,6 +276,12 @@ async def on_command_error(ctx, error):
     raise error
 
 @bot.event
+async def on_guild_join(guild):
+    if guild.id != 296764515335405570:
+        print(f'Saindo de servidor não-autorizado: {guild.name} ({guild.id})')
+        await guild.leave()
+
+@bot.event
 async def on_member_join(member):
     if dkdw.enviar_boas_vindas:
         await bot.get_guild(296764515335405570).get_channel(589600587742707732).send(
