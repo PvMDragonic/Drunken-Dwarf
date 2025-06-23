@@ -4,7 +4,7 @@ class DKDW():
     """Responsável por carregar e manter os dados e configurações do bot."""
     def __init__(self):
         try:
-            with open('dkdw.json', 'r') as arqv:
+            with open('dados/dkdw.json', 'r') as arqv:
                 self.__dict__.update(json.load(arqv))
         except FileNotFoundError:
             raise FileNotFoundError(f"Arquivo 'dkdw.json' não foi encontrado.")
