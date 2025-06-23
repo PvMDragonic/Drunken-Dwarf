@@ -1,4 +1,5 @@
 from lxml import html
+from requests.exceptions import RequestException
 import requests
 import re
 
@@ -20,12 +21,18 @@ async def buscar_meliantes() -> set[str] | None:
         requisicao = requests.get(black_list).content
         conteudo = html.fromstring(requisicao)
         linhas = conteudo.xpath('.//td')
-        return set(re.sub(r"\([^()]*\)", "", nome).strip() for elem in linhas for nome in elem.text_content().split("-"))
-    except Exception as erro:
+        
+        if not linhas:
+            raise ValueError('Blacklist indisponivel.')
+
+        return set(
+            re.sub(r"\([^()]*\)", "", nome).strip() 
+            for elem in linhas 
+            for nome in elem.text_content().split("-")
+        )
+    except (RequestException, ValueError) as erro:
         print(erro)
         return None
-
-print
 
 async def buscar_membros() -> set[str] | None:
     """

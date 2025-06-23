@@ -187,9 +187,9 @@ async def adicionar_cargo(message):
     meliantes = await nomes.buscar_meliantes()
     membros = await nomes.buscar_membros()
 
-    if not meliantes or not membros:
+    if not membros:
         return
-    
+
     DKDW = bot.get_guild(296764515335405570)
     MODERACAO = bot.get_channel(710255855316238447)
     CARGO_STAFF = DKDW.get_role(296780203940904960)
@@ -199,14 +199,19 @@ async def adicionar_cargo(message):
     nome = message.author.name
     nome_sv = message.author.display_name
 
-    if any(nome in meliantes for nome in [nome, nome_sv, message.content]):
-        return await MODERACAO.send(f'Usuário "{nome_sv}" tentou entrar no servidor como meliante da Black List {message.content}! {CARGO_STAFF.mention}')
+    if meliantes: # Blacklist dos clãs foi abandonada e deixou de ser pública. 
+        if any(nome in meliantes for nome in [nome, nome_sv, message.content]):
+            return await MODERACAO.send(
+                f'Usuário "{nome_sv}" tentou entrar no servidor como meliante da Blacklist dos Clãs {message.content}! {CARGO_STAFF.mention}'
+            )
     
     for member in DKDW.members:
         if member == message.author:
             continue
         if member.name in message.content or member.display_name in message.content:
-            return await MODERACAO.send(f'Usuário "{nome_sv}" tentou entrar no servidor se passando por {member.display_name}! {CARGO_STAFF.mention}')
+            return await MODERACAO.send(
+                f'Usuário "{nome_sv}" tentou entrar no servidor se passando por {member.display_name}! {CARGO_STAFF.mention}'
+            )
 
     if message.content in membros:
         await message.author.add_roles(CARGO_MEMBRO)
@@ -320,7 +325,7 @@ async def on_message(message):
     if message.channel.id == 866475904905773056: # DKDW/caixa-de-sugestões
         return await enviar_sugestao(message)
 
-    if message.channel.id == 589600587742707732: # DKDW/bem-vindos
+    if message.channel.id == 589600587742707732 or message.channel.id == 1123305689574539285: # DKDW/bem-vindos
         return await adicionar_cargo(message)
     
     if message.channel.id == 811639954442420235: # DKDW/drops-e-conquistas
