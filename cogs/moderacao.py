@@ -18,6 +18,12 @@ class Moderacao(commands.Cog):
         )
 
         embed.add_field(
+            name = '!inativos [dias]', 
+            value = 'Lista membros do clã inativos há x dias.\n᲼᲼', 
+            inline = False
+        )
+
+        embed.add_field(
             name = '!sortear [valor mínimo] [valor máximo]', 
             value = 'Soteia um número entre X e Y.\n᲼᲼', 
             inline = False
