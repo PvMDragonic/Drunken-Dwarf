@@ -7,8 +7,9 @@ import discord
 from dados.database import Database
 
 class InativosPaginator(View):
-    def __init__(self, inativos):
+    def __init__(self, inativos, filtro_tempo):
         super().__init__(timeout = None)
+        self.filtro = f"{filtro_tempo} dia{'s' if filtro_tempo != 1 else ''}"
         self.inativos = inativos
         self.pag_atual = 0
         self.pag_quantia = 10
@@ -33,7 +34,7 @@ class InativosPaginator(View):
 
     async def msg_inicial(self, ctx: commands.Context):
         embed = discord.Embed(
-            title = f"Jogadores inativos (Página {self.pag_atual + 1}/{self.pag_total})",
+            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
@@ -44,7 +45,7 @@ class InativosPaginator(View):
     async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.pag_atual -= 1
         embed = discord.Embed(
-            title = f"Jogadores inativos (Página {self.pag_atual + 1}/{self.pag_total})",
+            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
@@ -55,7 +56,7 @@ class InativosPaginator(View):
     async def proximo(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.pag_atual += 1
         embed = discord.Embed(
-            title = f"Jogadores inativos (Página {self.pag_atual + 1}/{self.pag_total})",
+            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
@@ -84,10 +85,15 @@ class Inativos(commands.Cog):
             return f'{separado[0]}.{separado[1]}B'
 
     @commands.command()
-    async def inativos(self, ctx):
+    async def inativos(self, ctx, *args):
         hoje = datetime.now().date()
         db = Database()
         membros = db.get_all_users()
+
+        try:
+            filtro_tempo = int(args[0])
+        except (ValueError, IndexError):
+            filtro_tempo = 1
 
         EXCLUIDOS = (
             'Org.', 'Coord.', 'Fiscal', 'Vice-Dono', 'Dono'
@@ -100,7 +106,7 @@ class Inativos(commands.Cog):
             tempo_inativo = (hoje - xp_data).days 
 
             # 1 dia inativo pode ser porque rodou antes da coleta diária.
-            if tempo_inativo >= 1 and rank not in EXCLUIDOS: 
+            if tempo_inativo >= filtro_tempo and rank not in EXCLUIDOS: 
                 inativos.append((
                     nome, 
                     rank, 
@@ -108,7 +114,7 @@ class Inativos(commands.Cog):
                     f'{tempo_inativo} dia(s)'
                 ))
 
-        paginator = InativosPaginator(inativos)
+        paginator = InativosPaginator(inativos, filtro_tempo)
         await paginator.msg_inicial(ctx)
 
 async def setup(bot):
