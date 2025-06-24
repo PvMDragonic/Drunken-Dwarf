@@ -3,6 +3,7 @@ from discord.ext.commands import CommandNotFound
 from discord.ext import commands
 import discord
 
+from dados.coleta_xp import Coleta
 from dados.dkdw import DKDW
 
 class DrunkenDwarf(commands.Bot):
@@ -22,7 +23,8 @@ class DrunkenDwarf(commands.Bot):
         extensions = (
             'cogs.autenticacao',
             'cogs.moderacao',
-            'cogs.diversos'
+            'cogs.diversos',
+            'cogs.inativos'
         )
 
         for ext in extensions:
@@ -61,6 +63,9 @@ class DrunkenDwarf(commands.Bot):
     async def on_ready(self):
         await self.change_presence(activity = discord.Game(name = 'no melhor clã BR'))
         print(f'>> {self.user} on-line!')
+
+        # Coletar dados do povo do clã.
+        await Coleta().iniciar()
 
     async def on_message(self, message):
         if '@everyone' in message.content or '@here' in message.content:
