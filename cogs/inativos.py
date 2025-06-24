@@ -9,7 +9,7 @@ from dados.database import Database
 class InativosPaginator(View):
     def __init__(self, inativos, filtro_tempo):
         super().__init__(timeout = None)
-        self.filtro = f"{filtro_tempo} dia{'s' if filtro_tempo != 1 else ''}"
+        self.filtro = filtro_tempo
         self.inativos = inativos
         self.pag_atual = 0
         self.pag_quantia = 10
@@ -114,8 +114,17 @@ class Inativos(commands.Cog):
                     f'{tempo_inativo} dia(s)'
                 ))
 
-        paginator = InativosPaginator(inativos, filtro_tempo)
-        await paginator.msg_inicial(ctx)
+        filtro_tempo = f"{filtro_tempo} dia{'s' if filtro_tempo != 1 else ''}"
+
+        if len(inativos) >= 1:
+            paginator = InativosPaginator(inativos, filtro_tempo)
+            await paginator.msg_inicial(ctx)
+        else:
+            await ctx.send(embed = discord.Embed(
+                title = f"Jogadores inativos há {filtro_tempo}",
+                description = 'Nenhum inativo dentro do período especificado!',
+                color = discord.Color.blue()
+            ))
 
 async def setup(bot):
     await bot.add_cog(Inativos(bot))
