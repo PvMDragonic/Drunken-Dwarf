@@ -49,15 +49,22 @@ class InativosPaginator(View):
         virgulas = f'{xp:,}'
         separado = virgulas.split(',')
 
-        if len(separado) == 2: # 2 vírgulas (100,000)
+        # 1 vírgula (100,000)
+        if len(separado) == 2: 
             ultimo_digito = separado[1][0]
-            formatado = f'{separado[0]}.{ultimo_digito}K' if ultimo_digito != '0' else f'{separado[0]}K'
-            return formatado
-        elif len(separado) == 3: # 3 vírgulas (100,000,000)
+            if ultimo_digito != '0':
+                return f'{separado[0]}.{ultimo_digito}K'
+            return f'{separado[0]}K'
+        
+        # 2 vírgulas (100,000,000)
+        if len(separado) == 3: 
             ultimo_digito = separado[1][0]
-            formatado = f'{separado[0]}.{ultimo_digito}M' if ultimo_digito != '0' else f'{separado[0]}M'
-            return formatado
-        elif len(separado) == 4: # 4 vírgulas (100,000,000,000)
+            if ultimo_digito != '0':
+                return f'{separado[0]}.{ultimo_digito}M'
+            return f'{separado[0]}M'
+        
+        # 3 vírgulas (100,000,000,000)
+        if len(separado) == 4: 
             return f'{separado[0]}.{separado[1]}B'
         
     @staticmethod
