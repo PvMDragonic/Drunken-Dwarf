@@ -30,16 +30,15 @@ class InativosPaginator(View):
         self.pag_quantia = 10
         self.pag_total = (len(inativos) - 1) // 10 + 1
 
-        self.modo_ordenar = 3
+        self.modo_ordenar = 3 # Padrão é ordem por tempo de inatividade.
         self.crescente = True
         
-
         # Ordena por XP como fallback caso tenha dois valores iguais.
         self.modos_ordenar = (
-            ("Ordenar: Nome", lambda inativo: (inativo[0], inativo[2])),   
-            ("Ordenar: Rank", lambda inativo: (self.ORDEM_RANKS.get(inativo[1], 999), inativo[2])),  
-            ("Ordenar: XP", lambda inativo: (inativo[2], inativo[3])),
-            ("Ordenar: Inativ.", lambda inativo: (inativo[3], inativo[2])),
+            ("Ordem: Nome", lambda inativo: (inativo[0], inativo[2])),   
+            ("Ordem: Rank", lambda inativo: (self.ORDEM_RANKS.get(inativo[1], 999), inativo[2])),  
+            ("Ordem: XP", lambda inativo: (inativo[2], inativo[3])),
+            ("Ordem: Tempo", lambda inativo: (inativo[3], inativo[2])),
         )
 
     @staticmethod
@@ -111,11 +110,10 @@ class InativosPaginator(View):
         self.pag_atual = (self.pag_atual + 1) % self.pag_total
         await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
-    @discord.ui.button(label = "Ordenar: Nome", style = discord.ButtonStyle.secondary)
+    @discord.ui.button(label = "Ordem: Tempo", style = discord.ButtonStyle.secondary)
     async def ordenar(self, interacao: discord.Interaction, botao: discord.ui.Button):
         self.modo_ordenar = (self.modo_ordenar + 1) % len(self.modos_ordenar)
-        prox_modo = (self.modo_ordenar + 1) % len(self.modos_ordenar)
-        botao.label = self.modos_ordenar[prox_modo][0]
+        botao.label = self.modos_ordenar[self.modo_ordenar][0]
 
         self.inativos.sort(
             key = self.modos_ordenar[self.modo_ordenar][1], 
