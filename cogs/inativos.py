@@ -32,6 +32,7 @@ class InativosPaginator(View):
 
         self.modo_ordenar = 3
         self.crescente = True
+        
 
         # Ordena por XP como fallback caso tenha dois valores iguais.
         self.modos_ordenar = (
@@ -90,75 +91,50 @@ class InativosPaginator(View):
         )
         return f"```{tabela}```"
 
-    async def msg_inicial(self, ctx: commands.Context):
-        embed = discord.Embed(
+    def criar_embed(self):
+        return discord.Embed(
             title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
 
-        await ctx.send(embed = embed, view = self)
+    async def msg_inicial(self, ctx: commands.Context):
+        await ctx.send(embed = self.criar_embed(), view = self)
 
     @discord.ui.button(label = "Anterior", style = discord.ButtonStyle.primary)
     async def anterior(self, interacao: discord.Interaction, _):
         self.pag_atual = (self.pag_atual - 1) % self.pag_total
-
-        embed = discord.Embed(
-            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
-            description = self.carregar_tabela(),
-            color = discord.Color.blue()
-        )
-
-        await interacao.response.edit_message(embed = embed, view = self)
+        await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
     @discord.ui.button(label = "Próximo", style = discord.ButtonStyle.primary)
     async def proximo(self, interacao: discord.Interaction, _):
         self.pag_atual = (self.pag_atual + 1) % self.pag_total
-
-        embed = discord.Embed(
-            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
-            description = self.carregar_tabela(),
-            color = discord.Color.blue()
-        )
-
-        await interacao.response.edit_message(embed = embed, view = self)
+        await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
     @discord.ui.button(label = "Ordenar: Nome", style = discord.ButtonStyle.secondary)
     async def ordenar(self, interacao: discord.Interaction, botao: discord.ui.Button):
         self.modo_ordenar = (self.modo_ordenar + 1) % len(self.modos_ordenar)
+        prox_modo = (self.modo_ordenar + 1) % len(self.modos_ordenar)
+        botao.label = self.modos_ordenar[prox_modo][0]
 
         self.inativos.sort(
             key = self.modos_ordenar[self.modo_ordenar][1], 
             reverse = self.crescente
         )
 
-        embed = discord.Embed(
-            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
-            description = self.carregar_tabela(),
-            color = discord.Color.green(),
-        )
-
-        prox_modo = (self.modo_ordenar + 1) % len(self.modos_ordenar)
-        botao.label = self.modos_ordenar[prox_modo][0]
-        await interacao.response.edit_message(embed = embed, view = self)
+        await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
     @discord.ui.button(label = "Decrescente", style = discord.ButtonStyle.secondary)
     async def direcao(self, interacao: discord.Interaction, botao: discord.ui.Button):
         self.crescente = not self.crescente
+        botao.label = 'Crescente' if self.crescente else 'Decrescente'
 
         self.inativos.sort(
             key = self.modos_ordenar[self.modo_ordenar][1], 
             reverse = self.crescente
         )
-
-        embed = discord.Embed(
-            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
-            description = self.carregar_tabela(),
-            color = discord.Color.green(),
-        )
-
-        botao.label = 'Crescente' if self.crescente else 'Decrescente'
-        await interacao.response.edit_message(embed = embed, view = self)
+        
+        await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
 class Inativos(commands.Cog):
     def __init__(self, bot):
