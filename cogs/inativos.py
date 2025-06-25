@@ -7,6 +7,21 @@ import discord
 from dados.database import Database
 
 class InativosPaginator(View):
+    ORDEM_RANKS = {
+        'Dono': 0,
+        'Vice-Dono': 1,
+        'Fiscal': 2,
+        'Coord.': 3,
+        'Org.': 4,
+        'Admin.': 5,
+        'General': 6,
+        'Capitão': 7,
+        'Tenente': 8,
+        'Sargento': 9,
+        'Cabo': 10,
+        'Recruta': 11
+    }
+
     def __init__(self, inativos, filtro_tempo):
         super().__init__(timeout = None)
         self.filtro = filtro_tempo
@@ -15,10 +30,40 @@ class InativosPaginator(View):
         self.pag_quantia = 10
         self.pag_total = (len(inativos) - 1) // 10 + 1
 
+        self.modo_ordenar = 3
+        self.crescente = True
+
+        # Ordena por XP como fallback caso tenha dois valores iguais.
+        self.modos_ordenar = (
+            ("Ordenar: Nome", lambda inativo: (inativo[0], inativo[2])),   
+            ("Ordenar: Rank", lambda inativo: (self.ORDEM_RANKS.get(inativo[1], 999), inativo[2])),  
+            ("Ordenar: XP", lambda inativo: (inativo[2], inativo[3])),
+            ("Ordenar: Inativ.", lambda inativo: (inativo[3], inativo[2])),
+        )
+
+    @staticmethod
+    def formatar_xp(xp: int):
+        virgulas = f'{xp:,}'
+        separado = virgulas.split(',')
+
+        if len(separado) == 2: # 2 vírgulas (100,000)
+            ultimo_digito = separado[1][0]
+            formatado = f'{separado[0]}.{ultimo_digito}K' if ultimo_digito != '0' else f'{separado[0]}K'
+            return formatado
+        elif len(separado) == 3: # 3 vírgulas (100,000,000)
+            ultimo_digito = separado[1][0]
+            formatado = f'{separado[0]}.{ultimo_digito}M' if ultimo_digito != '0' else f'{separado[0]}M'
+            return formatado
+        elif len(separado) == 4: # 4 vírgulas (100,000,000,000)
+            return f'{separado[0]}.{separado[1]}B'
+
     def carregar_tabela(self):
         comeco = self.pag_atual * self.pag_quantia
-        end = comeco + self.pag_quantia
-        pagina = self.inativos[comeco:end]
+        fim = comeco + self.pag_quantia
+        pagina = [
+            (nome, rank, InativosPaginator.formatar_xp(xp), f'{inativo} dia(s)') 
+            for nome, rank, xp, inativo in self.inativos[comeco:fim]
+        ]
 
         tabela = t2a(
             header = ["Nome", "Rank", "XP", "Inativo"],
@@ -38,51 +83,76 @@ class InativosPaginator(View):
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
+
         self.atualizar_btns()
         await ctx.send(embed = embed, view = self)
 
     @discord.ui.button(label = "Anterior", style = discord.ButtonStyle.primary, disabled = True)
-    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def anterior(self, interacao: discord.Interaction, _):
         self.pag_atual -= 1
+
         embed = discord.Embed(
             title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
+
         self.atualizar_btns()
-        await interaction.response.edit_message(embed = embed, view = self)
+        await interacao.response.edit_message(embed = embed, view = self)
 
     @discord.ui.button(label = "Próximo", style = discord.ButtonStyle.primary)
-    async def proximo(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def proximo(self, interacao: discord.Interaction, _):
         self.pag_atual += 1
+
         embed = discord.Embed(
             title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
-        self.atualizar_btns()
-        await interaction.response.edit_message(embed = embed, view=self)
 
+        self.atualizar_btns()
+        await interacao.response.edit_message(embed = embed, view = self)
+
+    @discord.ui.button(label = "Ordenar: Nome", style = discord.ButtonStyle.secondary)
+    async def ordenar(self, interacao: discord.Interaction, botao: discord.ui.Button):
+        self.modo_ordenar = (self.modo_ordenar + 1) % len(self.modos_ordenar)
+
+        self.inativos.sort(
+            key = self.modos_ordenar[self.modo_ordenar][1], 
+            reverse = self.crescente
+        )
+
+        embed = discord.Embed(
+            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
+            description = self.carregar_tabela(),
+            color = discord.Color.green(),
+        )
+
+        prox_modo = (self.modo_ordenar + 1) % len(self.modos_ordenar)
+        botao.label = self.modos_ordenar[prox_modo][0]
+        await interacao.response.edit_message(embed = embed, view = self)
+
+    @discord.ui.button(label = "Decrescente", style = discord.ButtonStyle.secondary)
+    async def direcao(self, interacao: discord.Interaction, botao: discord.ui.Button):
+        self.crescente = not self.crescente
+
+        self.inativos.sort(
+            key = self.modos_ordenar[self.modo_ordenar][1], 
+            reverse = self.crescente
+        )
+
+        embed = discord.Embed(
+            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
+            description = self.carregar_tabela(),
+            color = discord.Color.green(),
+        )
+
+        botao.label = 'Crescente' if self.crescente else 'Decrescente'
+        await interacao.response.edit_message(embed = embed, view = self)
 
 class Inativos(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    @staticmethod
-    def _formatar_xp(xp: int):
-        virgulas = f'{xp:,}'
-        separado = virgulas.split(',')
-
-        if len(separado) == 2: # 2 vírgulas (100,000)
-            ultimo_digito = separado[1][0]
-            formatado = f'{separado[0]}.{ultimo_digito}K' if ultimo_digito != '0' else f'{separado[0]}K'
-            return formatado
-        elif len(separado) == 3: # 3 vírgulas (100,000,000)
-            ultimo_digito = separado[1][0]
-            formatado = f'{separado[0]}.{ultimo_digito}M' if ultimo_digito != '0' else f'{separado[0]}M'
-            return formatado
-        elif len(separado) == 4: # 4 vírgulas (100,000,000,000)
-            return f'{separado[0]}.{separado[1]}B'
 
     @commands.command()
     async def inativos(self, ctx, *args):
@@ -107,16 +177,17 @@ class Inativos(commands.Cog):
 
             # 1 dia inativo pode ser porque rodou antes da coleta diária.
             if tempo_inativo >= filtro_tempo and rank not in EXCLUIDOS: 
-                inativos.append((
-                    nome, 
-                    rank, 
-                    Inativos._formatar_xp(xp), 
-                    f'{tempo_inativo} dia(s)'
-                ))
+                inativos.append((nome, rank, xp, tempo_inativo))
 
         filtro_tempo = f"{filtro_tempo} dia{'s' if filtro_tempo != 1 else ''}"
 
         if len(inativos) >= 1:
+            # Por padrão ordena pelo tempo de inatividade decrescente e depois por XP.
+            inativos.sort(
+                key = lambda inativo: (inativo[3], inativo[2]), 
+                reverse = True
+            )
+
             paginator = InativosPaginator(inativos, filtro_tempo)
             await paginator.msg_inicial(ctx)
         else:
