@@ -43,6 +43,9 @@ class InativosPaginator(View):
 
     @staticmethod
     def formatar_xp(xp: int):
+        if xp == 0:
+            return "Zero"
+        
         virgulas = f'{xp:,}'
         separado = virgulas.split(',')
 
