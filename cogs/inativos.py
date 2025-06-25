@@ -90,10 +90,6 @@ class InativosPaginator(View):
         )
         return f"```{tabela}```"
 
-    def atualizar_btns(self):
-        self.anterior.disabled = self.pag_atual == 0
-        self.proximo.disabled = self.pag_atual >= self.pag_total - 1
-
     async def msg_inicial(self, ctx: commands.Context):
         embed = discord.Embed(
             title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
@@ -101,12 +97,11 @@ class InativosPaginator(View):
             color = discord.Color.blue()
         )
 
-        self.atualizar_btns()
         await ctx.send(embed = embed, view = self)
 
-    @discord.ui.button(label = "Anterior", style = discord.ButtonStyle.primary, disabled = True)
+    @discord.ui.button(label = "Anterior", style = discord.ButtonStyle.primary)
     async def anterior(self, interacao: discord.Interaction, _):
-        self.pag_atual -= 1
+        self.pag_atual = (self.pag_atual - 1) % self.pag_total
 
         embed = discord.Embed(
             title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
@@ -114,12 +109,11 @@ class InativosPaginator(View):
             color = discord.Color.blue()
         )
 
-        self.atualizar_btns()
         await interacao.response.edit_message(embed = embed, view = self)
 
     @discord.ui.button(label = "Próximo", style = discord.ButtonStyle.primary)
     async def proximo(self, interacao: discord.Interaction, _):
-        self.pag_atual += 1
+        self.pag_atual = (self.pag_atual + 1) % self.pag_total
 
         embed = discord.Embed(
             title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
@@ -127,7 +121,6 @@ class InativosPaginator(View):
             color = discord.Color.blue()
         )
 
-        self.atualizar_btns()
         await interacao.response.edit_message(embed = embed, view = self)
 
     @discord.ui.button(label = "Ordenar: Nome", style = discord.ButtonStyle.secondary)
