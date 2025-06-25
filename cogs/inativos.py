@@ -56,14 +56,21 @@ class InativosPaginator(View):
             return formatado
         elif len(separado) == 4: # 4 vírgulas (100,000,000,000)
             return f'{separado[0]}.{separado[1]}B'
+        
+    @staticmethod
+    def formatar_dia(dias: int):
+        unidade = "dia" if dias == 1 else "dias"
+        return f"{dias} {unidade}"
 
     def carregar_tabela(self):
         comeco = self.pag_atual * self.pag_quantia
         fim = comeco + self.pag_quantia
-        pagina = [
-            (nome, rank, InativosPaginator.formatar_xp(xp), f'{inativo} dia(s)') 
-            for nome, rank, xp, inativo in self.inativos[comeco:fim]
-        ]
+        pagina = [(
+            nome, 
+            rank, 
+            InativosPaginator.formatar_xp(xp), 
+            InativosPaginator.formatar_dia(inativo)
+        ) for nome, rank, xp, inativo in self.inativos[comeco:fim]]
 
         tabela = t2a(
             header = ["Nome", "Rank", "XP", "Inativo"],
