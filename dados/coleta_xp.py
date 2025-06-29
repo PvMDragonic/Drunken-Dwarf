@@ -15,14 +15,10 @@ from dados.fetch import Fetch
 
 class Coleta():
     @staticmethod
-    def _tempo_para_nove_horas(prox_dia = True):
-        agr = datetime.now()
-        nove_horas = agr.replace(hour = 9, minute = 5)
-        
-        if prox_dia:
-            nove_horas = nove_horas + timedelta(days = 1)
-        
-        diferenca = nove_horas - agr
+    def _tempo_para_nove_horas():
+        agora = datetime.now()
+        nove_horas = agora.replace(hour = 9)
+        diferenca = nove_horas - agora
         return diferenca.total_seconds()
     
     @staticmethod
@@ -174,8 +170,8 @@ class Coleta():
             agora = datetime.now()
 
             # Improvável que alguém upe muito/mude de nome de madrugada.
-            if agora.time() <= time(9, 5):
-                segundos = Coleta._tempo_para_nove_horas(prox_dia = False)
+            if agora.time() <= time(9):
+                segundos = Coleta._tempo_para_nove_horas()
                 print(f'Dormindo {segundos} até as 9 da matina.')
                 await sleep(segundos)
                 
