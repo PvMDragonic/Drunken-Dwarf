@@ -85,7 +85,7 @@ class Database():
 
     def get_last_xp(self, id: int) -> tuple[int, str] | None:
         try:
-            self.cursor.execute("SELECT xp, xp_date FROM users_data WHERE id_user = ? ORDER BY xp_date DESC LIMIT 1", (id,))
+            self.cursor.execute("SELECT xp, xp_date, rank FROM users_data WHERE id_user = ? ORDER BY xp_date DESC LIMIT 1", (id,))
             return self.cursor.fetchone()
         except Exception as e:
             print(f'Database error: {e}')

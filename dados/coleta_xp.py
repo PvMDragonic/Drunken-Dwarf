@@ -55,7 +55,7 @@ class Coleta():
                 db.add_xp(id, rank, xp_atual, kills, hoje)
                 continue
 
-            ultimo_xp, data_xp = ultimo_registro 
+            ultimo_xp, data_xp, _ = ultimo_registro 
 
             # Não precisa de mais de um registro por dia.
             if data_xp == hoje:
