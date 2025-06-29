@@ -92,7 +92,7 @@ class InativosPaginator(View):
 
     def criar_embed(self):
         return discord.Embed(
-            title = f"Jogadores inativos há {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
+            title = f"Jogadores inativos há pelo menos {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
@@ -176,7 +176,7 @@ class Inativos(commands.Cog):
             await paginator.msg_inicial(ctx)
         else:
             await ctx.send(embed = discord.Embed(
-                title = f"Jogadores inativos há {filtro_tempo}",
+                title = f"Jogadores inativos há pelo menos {filtro_tempo} ",
                 description = 'Nenhum inativo dentro do período especificado!',
                 color = discord.Color.blue()
             ))
