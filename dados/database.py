@@ -107,6 +107,18 @@ class Database():
         except Exception as e:
             print(f'Database error: {e}')
             return None
+        
+    def get_user_name_history(self, name: str) -> tuple[str, str] | None:
+        try:
+            id, _ = self.user_exists(name)
+            self.cursor.execute(
+                "SELECT username, name_date FROM users_names WHERE id_user = ?", 
+                (id, )
+            )
+            return self.cursor.fetchall()
+        except Exception as e:
+            print(f'Database error: {e}')
+            return None
 
     def add_xp(self, id_user: int, rank: str, xp: int, kc: int, today: str):
         try:

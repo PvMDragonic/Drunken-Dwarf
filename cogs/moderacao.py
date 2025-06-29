@@ -1,8 +1,10 @@
 from discord.ext import commands
 from random import randint
-import datetime
+from datetime import datetime
 import discord
 import asyncio
+
+from dados.database import Database
 
 class Moderacao(commands.Cog):
     """Cog responsável por comandos da Moderação/Staff."""
@@ -20,6 +22,12 @@ class Moderacao(commands.Cog):
         embed.add_field(
             name = '!inativos [dias]', 
             value = 'Lista membros do clã inativos há x dias.\n᲼᲼', 
+            inline = False
+        )
+
+        embed.add_field(
+            name = '!historico [pessoa]', 
+            value = 'Lista o histórico de nomes conhecidos de [pessoa].\n᲼᲼', 
             inline = False
         )
 
@@ -59,6 +67,32 @@ class Moderacao(commands.Cog):
             ctx.message.author.mention, 
             embed = embed
         )
+
+    @commands.command(name = 'historico', aliases = ['histórico'])
+    async def historico(self, ctx: commands.Context, *args):
+        if len(args) != 1:
+            return await ctx.send(f'Você precisa informar o nome de quem você quer saber o histórico! {ctx.author.mention}')
+        
+        db = Database()
+        nome = args[0]
+        historico = db.get_user_name_history(nome)
+        db.close()
+
+        if historico:
+            embed = discord.Embed(
+                title = f"Histórico de nomes de {nome}:",
+                color = discord.Color.blue()
+            )
+            for nick, data in historico: 
+                data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
+                embed.add_field(
+                    name = nick, 
+                    value = f'Alterado em **{data_formatada}**',
+                    inline = False
+                )
+            await ctx.send(embed = embed)
+        else:
+            await ctx.send(f'Não há histórico para "{nome}"! {ctx.author.mention}')
 
     @commands.command()
     async def limpar(self, ctx, quantia: int, *user):    
@@ -105,7 +139,7 @@ class Moderacao(commands.Cog):
             description = f"O número sorteado foi: **{randint(int(args[0]), int(args[1]))}**\n\n__**Parabéns!**__", 
             color = 0x7a8ff5)
         embed.set_thumbnail(url=ctx.guild.icon.url)
-        embed.set_footer(text=f"DKDW • {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        embed.set_footer(text=f"DKDW • {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
         await ctx.message.channel.send(embed = embed)
 
     @commands.command()

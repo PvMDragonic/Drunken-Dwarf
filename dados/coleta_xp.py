@@ -182,7 +182,7 @@ class Coleta():
 
             print('Atualizando stats...')
             await Coleta()._atualizar_stats()
-
+ 
             print('Verificando nomes alterados...')
             await Coleta()._verificar_alterados()
                 
