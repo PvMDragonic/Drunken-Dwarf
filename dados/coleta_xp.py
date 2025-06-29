@@ -22,7 +22,7 @@ class Coleta():
     @staticmethod
     async def _coletar_cabecinhas():
         cabecinhas = await Coleta()._listar_membros_cla(completo = True)
-        if not cabecinhas:
+        if cabecinhas is None:
             return 
         
         hoje = datetime.today().strftime('%Y-%m-%d')
