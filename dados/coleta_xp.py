@@ -2,12 +2,10 @@ from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import cosine
 import numpy as np
 
-from datetime import datetime, timedelta, time
-from sqlite3 import OperationalError
+from datetime import datetime, time
 from asyncio import sleep
 from io import StringIO
 import pandas as pd
-import requests
 import re
 
 from dados.database import Database
@@ -22,50 +20,53 @@ class Coleta():
         return diferenca.total_seconds()
     
     @staticmethod
-    def _coletar_cabecinhas(db: Database):
-        response = requests.get('http://services.runescape.com/m=clan-hiscores/members_lite.ws?clanName=Drunken+Dwarf')
+    async def _coletar_cabecinhas():
+        cabecinhas = await Coleta()._listar_membros_cla(completo = True)
+        if not cabecinhas:
+            return 
+        
+        hoje = datetime.today().strftime('%Y-%m-%d')
+        db = Database()
 
-        if response.status_code == 200:
-            request_text = response.content.decode('utf-8', errors = 'replace').replace('\ufffd', ' ')
-            cabecinhas = pd.read_csv(StringIO(request_text), header = 0)
-            hoje = datetime.today().strftime('%Y-%m-%d')
+        RANKS = {
+            'Owner': 'Dono',
+            'Deputy Owner': 'Vice-Dono',
+            'Overseer': 'Fiscal',
+            'Coordinator': 'Coord.',
+            'Organiser': 'Org.',
+            'Admin': 'Admin.',
+            'General': 'General',
+            'Captain': 'Capitão',
+            'Lieutenant': 'Tenente',
+            'Sergeant': 'Sargento',
+            'Corporal': 'Cabo',
+            'Recruit': 'Recruta'
+        }
 
-            RANKS = {
-                'Owner': 'Dono',
-                'Deputy Owner': 'Vice-Dono',
-                'Overseer': 'Fiscal',
-                'Coordinator': 'Coord.',
-                'Organiser': 'Org.',
-                'Admin': 'Admin.',
-                'General': 'General',
-                'Captain': 'Capitão',
-                'Lieutenant': 'Tenente',
-                'Sergeant': 'Sargento',
-                'Corporal': 'Cabo',
-                'Recruit': 'Recruta'
-            }
+        for _, cringe in cabecinhas.iterrows():
+            nome = cringe['Clanmate']
+            xp_atual = cringe[' Total XP'] # Sim, tem espaço.
+            rank = RANKS[cringe[' Clan Rank']]
+            kills = cringe[' Kills']
+            id, _ = db.user_exists(nome) or db.create_user(nome, hoje)
 
-            for _, cringe in cabecinhas.iterrows():
-                nome = cringe['Clanmate']
-                usuario = db.user_exists(nome)
-                xp_atual = cringe[' Total XP'] # Sim, tem espaço.
-                rank = RANKS[cringe[' Clan Rank']]
-                kills = cringe[' Kills']
-                id, _ = usuario if usuario else db.create_user(nome, hoje)
+            ultimo_registro = db.get_last_xp(id)
+            if not ultimo_registro:
+                db.add_xp(id, rank, xp_atual, kills, hoje)
+                continue
 
-                try:
-                    ultimo_xp = db.get_last_xp(id)[0]
-                except TypeError: # Não tem registro prévio.
-                    db.add_xp(id, rank, xp_atual, kills, hoje)
-                    continue
+            ultimo_xp, data_xp = ultimo_registro 
 
-                if xp_atual > ultimo_xp:
-                    db.add_xp(id, rank, xp_atual, kills, hoje)
-        else:
-            print("Erro na coleta de membros: ", response.status_code)
+            # Não precisa de mais de um registro por dia.
+            if data_xp == hoje:
+                continue
+
+            if xp_atual > ultimo_xp:
+                db.add_xp(id, rank, xp_atual, kills, hoje)
+        db.close()
             
     @staticmethod
-    async def _listar_membros_cla() -> None | list[str]:
+    async def _listar_membros_cla(completo: bool = False) -> None | list[str] | pd.DataFrame:
         """Retorna o nome dos membros do clã."""
 
         try:
@@ -76,7 +77,8 @@ class Coleta():
 
             request_text = response.replace('\ufffd', ' ')
             cabecinhas = pd.read_csv(StringIO(request_text), header = 0)
-            return [cringe['Clanmate'] for _, cringe in cabecinhas.iterrows()]
+            
+            return [cringe['Clanmate'] for _, cringe in cabecinhas.iterrows()] if not completo else cabecinhas
         except Exception as e:
             print(f'Erro ao puxar membros do clã da API: {e}')
             return None
@@ -175,20 +177,8 @@ class Coleta():
                 print(f'Dormindo {segundos} até as 9 da matina.')
                 await sleep(segundos)
                 
-            db = Database()
-            try:
-                db.cursor.execute("SELECT xp_date FROM users_data ORDER BY xp_date DESC LIMIT 1")
-                result = db.cursor.fetchone()
-                sem_col_hoje = agora.date() > datetime.strptime(result[0], '%Y-%m-%d').date()
-
-                if not result or sem_col_hoje:
-                    print('Coletando cabecinhas...')
-                    Coleta()._coletar_cabecinhas(db)
-                    continue
-            except OperationalError as e:
-                print(f'Erro: {e}') # Primeira execução com db vazia vai cair aqui.
-            finally:
-                db.close()
+            print('Coletando cabecinhas...')
+            await Coleta()._coletar_cabecinhas()
 
             print('Atualizando stats...')
             await Coleta()._atualizar_stats()
