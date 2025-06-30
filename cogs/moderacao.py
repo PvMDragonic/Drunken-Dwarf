@@ -70,11 +70,11 @@ class Moderacao(commands.Cog):
 
     @commands.command(name = 'historico', aliases = ['histórico'])
     async def historico(self, ctx: commands.Context, *args):
-        if len(args) != 1:
+        if len(args) == 0:
             return await ctx.send(f'Você precisa informar o nome de quem você quer saber o histórico! {ctx.author.mention}')
         
         db = Database()
-        nome = args[0]
+        nome = ' '.join(args)
         historico = db.get_user_name_history(nome)
         db.close()
 
