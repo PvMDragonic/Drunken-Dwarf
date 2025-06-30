@@ -102,7 +102,8 @@ class DrunkenDwarf(commands.Bot):
         if message.channel.id == 811639954442420235: # DKDW/drops-e-conquistas
             return await self.get_cog('Diversos').enviar_gratz(message)
 
-        if not message.author.guild_permissions.administrator:
+        is_staff = any(role.id == 296780203940904960 for role in message.author.roles)
+        if not message.author.guild_permissions.administrator and not is_staff:
             return
 
         await self.process_commands(message)
