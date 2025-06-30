@@ -65,7 +65,7 @@ class DrunkenDwarf(commands.Bot):
         print(f'>> {self.user} on-line!')
 
         # Coletar dados do povo do clã.
-        await Coleta().iniciar()
+        await Coleta().iniciar(self)
 
     async def on_message(self, message):
         if '@everyone' in message.content or '@here' in message.content:

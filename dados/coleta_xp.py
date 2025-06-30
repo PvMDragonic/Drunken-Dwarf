@@ -2,6 +2,7 @@ from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import cosine
 import numpy as np
 
+from discord import TextChannel, Embed, Color
 from datetime import datetime, time
 from asyncio import sleep
 from io import StringIO
@@ -109,7 +110,7 @@ class Coleta():
         db.close()
 
     @staticmethod
-    async def _verificar_alterados():
+    async def _verificar_alterados(canal: TextChannel):
         """
         Verifica e trata nomes registrados que não estão mais no clã.
             - Quem saiu (não tem `NO_PROFILE` no RuneMetrics)  é eliminado;
@@ -127,11 +128,15 @@ class Coleta():
         # Registrados que não estão mais no clã.
         desaparecidos = [(id, nome) for id, nome in cabecinhas_registradas if nome not in cabecinhas_atuais]
 
+        saidas = []
+        novos_nomes = []
+
         for id, nome in desaparecidos:
             try:
                 runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
                 if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
                     db.delete_user(id)
+                    saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
 
                 desconhecido = db.user_exists(nome)
@@ -157,15 +162,42 @@ class Coleta():
 
                 best_match, score = max(similaridades, key = lambda x: x[1])
                 novo_id, novo_nome = best_match
+                sim = f'{(score * 100):.2f}%'
 
                 db.merge_users(id_antigo, novo_id)
-                print(f"({id_antigo} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {(score * 100):.2f}%")
+                novos_nomes.append[(nome, novo_nome, sim)]
+                print(f"({id_antigo} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
             except Exception as e:
                 print(f'Erro atualizando {nome} para novo nome: {e}')
         db.close()
 
+        if saidas or novos_nomes:
+            embed = Embed(
+                title = f"Relatório de jogadores",
+                description = 'Lista de quem saiu e/ou trocou de nome.',
+                color = Color.blue()
+            )
+
+            for cabecinha in saidas:
+                embed.add_field(
+                    name = cabecinha,
+                    value = 'Saiu do clã.', 
+                    inline = False
+                )
+            for nome_antigo, nome_novo, sim in novos_nomes:
+                embed.add_field(
+                    name = nome_antigo, 
+                    value = f'Trocou de nome para `{nome_novo}` ({sim} de certeza).', 
+                    inline = False
+                )
+
+            await canal.send(embed = embed)
+
     @staticmethod
-    async def iniciar():
+    async def iniciar(bot):
+        # 'DKDW/Moderação' ou disc de testes.
+        moderacao = bot.get_channel(1211472248326856724) or bot.get_channel(1123305689574539285)
+
         await sleep(15)
 
         while True:
@@ -184,7 +216,7 @@ class Coleta():
             await Coleta()._atualizar_stats()
  
             print('Verificando nomes alterados...')
-            await Coleta()._verificar_alterados()
+            await Coleta()._verificar_alterados(moderacao)
                 
             HORAS = 3
             print(f'Dormindo por {HORAS} horas.')
