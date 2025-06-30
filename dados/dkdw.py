@@ -14,7 +14,8 @@ class DKDW():
             'msg_bem_vindos': str,
             'enviar_boas_vindas': bool,
             'msg_despedida': str,
-            'enviar_despedida': bool
+            'enviar_despedida': bool,
+            'enviar_relatorio': bool
         }
 
         for atributo, tipo in atributos_json.items():
@@ -32,8 +33,8 @@ class DKDW():
             if tipo == str and value.strip() == "":
                 raise ValueError(f"O campo '{atributo}' não pode ser uma string vazia.")
 
-    def salvar_dados(self): 
-        with open('dkdw.json', 'w') as arqv:
+    def salvar_dados(self):
+        with open('dados/dkdw.json', 'w') as arqv:
             json.dump(self.__dict__, arqv, indent = 4)
 
     def boas_vindas(self, mention: str):

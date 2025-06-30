@@ -110,7 +110,7 @@ class Coleta():
         db.close()
 
     @staticmethod
-    async def _verificar_alterados(canal: TextChannel):
+    async def _verificar_alterados(enviar_relatorio: bool, canal: TextChannel):
         """
         Verifica e trata nomes registrados que não estão mais no clã.
             - Quem saiu (não tem `NO_PROFILE` no RuneMetrics)  é eliminado;
@@ -171,6 +171,9 @@ class Coleta():
                 print(f'Erro atualizando {nome} para novo nome: {e}')
         db.close()
 
+        if not enviar_relatorio:
+            return
+        
         if saidas or novos_nomes:
             embed = Embed(
                 title = f"Relatório de jogadores",
@@ -216,7 +219,7 @@ class Coleta():
             await Coleta()._atualizar_stats()
  
             print('Verificando nomes alterados...')
-            await Coleta()._verificar_alterados(moderacao)
+            await Coleta()._verificar_alterados(bot.dkdw.enviar_relatorio, moderacao)
                 
             HORAS = 3
             print(f'Dormindo por {HORAS} horas.')

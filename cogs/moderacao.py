@@ -57,7 +57,13 @@ class Moderacao(commands.Cog):
 
         embed.add_field(
             name = '!teste [opção]', 
-            value = 'Testa a mensagem de boas-vindas.\nOpção 1 para boas-vindas; 2 para despedida.', 
+            value = 'Testa a mensagem de boas-vindas.\nOpção 1 para boas-vindas; 2 para despedida.᲼᲼', 
+            inline = False
+        )
+
+        embed.add_field(
+            name = '!relatórios', 
+            value = 'Ativa ou desativa (inverte) o envio de relatórios\nde quando alguém sai do clã ou muda de nome.', 
             inline = False
         )
 
@@ -196,6 +202,14 @@ class Moderacao(commands.Cog):
             self.bot.dkdw.salvar_dados()
             await ctx.channel.send(
                 f'Uma nova mensagem de despedida foi definida! Use `!teste 2` para ver como ficou. {ctx.message.author.mention}'
+            )
+
+    @commands.command(name = 'relatorios', aliases = ['relatórios'])
+    async def relatorios(self, ctx: commands.Context):
+        self.bot.dkdw.enviar_relatorio = not self.bot.dkdw.enviar_relatorio
+        self.bot.dkdw.salvar_dados()
+        await ctx.channel.send(
+                f"Relatórios de saídas e/ou mudanças de nome **{'ativadas' if self.bot.dkdw.enviar_relatorio else 'desativadas'}**! {ctx.message.author.mention}"
             )
 
 async def setup(bot):
