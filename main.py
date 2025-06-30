@@ -3,7 +3,7 @@ from discord.ext.commands import CommandNotFound
 from discord.ext import commands
 import discord
 
-from dados.coleta_xp import Coleta
+from dados.coleta import Coleta
 from dados.dkdw import DKDW
 
 class DrunkenDwarf(commands.Bot):
