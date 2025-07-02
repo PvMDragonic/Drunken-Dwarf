@@ -165,7 +165,7 @@ class Coleta():
                 sim = f'{(score * 100):.2f}%'
 
                 db.merge_users(id_antigo, novo_id)
-                novos_nomes.append[(nome, novo_nome, sim)]
+                novos_nomes.append((nome, novo_nome, sim))
                 print(f"({id_antigo} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
             except Exception as e:
                 print(f'Erro atualizando {nome} para novo nome: {e}')
