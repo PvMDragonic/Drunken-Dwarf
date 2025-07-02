@@ -156,7 +156,7 @@ class Coleta():
                 ultimo_stats = scaler.transform(stats_antigo)[0]       # shape (150,)
 
                 similaridades = []
-                for id_conhecido, vetor_conhecido in zip(db.get_all_users_with_data(id_antigo), dados_historicos):
+                for id_conhecido, vetor_conhecido in zip(db.get_all_users_with_stats(id_antigo), dados_historicos):
                     sim = 1 - cosine(ultimo_stats, vetor_conhecido)
                     similaridades.append((id_conhecido, sim))
 

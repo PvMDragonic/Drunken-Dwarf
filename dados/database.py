@@ -65,17 +65,22 @@ class Database():
             print(f'Database error: {e}')
             return None
         
-    def get_all_users_with_data(self, excluding_id: int) -> list[tuple[int, str]] | None:
+    def get_all_users_with_stats(self, excluding_id: int) -> list[tuple[int, str]] | None:
         try:
             self.cursor.execute("""
                 SELECT un.id_user, un.username
                 FROM users_names un
-                WHERE un.id_user != ? 
-                    AND EXISTS (
-                        SELECT 1 
-                        FROM users_stats d 
-                        WHERE d.id_user = un.id_user
-                    )
+                WHERE un.id_user != ?
+                AND EXISTS (
+                    SELECT 1 
+                    FROM users_stats d 
+                    WHERE d.id_user = un.id_user
+                )
+                AND un.id = (
+                    SELECT MAX(un2.id)
+                    FROM users_names un2
+                    WHERE un2.id_user = un.id_user
+                )
                 ORDER BY un.id_user;
             """, (excluding_id, ))
             return self.cursor.fetchall()
