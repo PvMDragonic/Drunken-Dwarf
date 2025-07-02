@@ -173,17 +173,17 @@ class Database():
             stats = [stat for stat in self.get_user_stats(id_new)]
             self.add_stats(id_old, stats)
 
-            # Ao deletar o novo id, o user_stats desse novo vão ir junto.
-            self.cursor.execute(
-                'DELETE FROM users WHERE id = ?', 
-                (id_new, )
-            )
-            self.conn.commit()
+            # Ao deletar o novo id, o user_stats desse novo vai ir junto.
+            self.delete_user(id_new)
+
+            # Não tem commit porque o delete_user() já commita.
         except Exception as e:
             print(f'Database MOGGED: {e}')
 
     def delete_user(self, id: str):
         try:
+            # Necessário pra enforçar foreign key e ON CASCADE DELETE funcionar.
+            self.cursor.execute('PRAGMA foreign_keys = ON')
             self.cursor.execute('DELETE FROM users WHERE id = ?', (id, ))
             self.conn.commit()
         except Exception as e:
