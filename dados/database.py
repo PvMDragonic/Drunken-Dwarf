@@ -156,17 +156,19 @@ class Database():
     def merge_users(self, id_old: int, id_new: int):
         try:
             self.cursor.execute(
-                'UPDATE users_stats SET id_user = ? WHERE id_user = ?', 
+                'UPDATE users_names SET id_user = ? WHERE id_user = ?',
                 (id_old, id_new, )
             )
             self.cursor.execute(
                 'UPDATE users_data SET id_user = ? WHERE id_user = ?', 
                 (id_old, id_new, )
             )
-            self.cursor.execute(
-                'UPDATE users_names SET id_user = ? WHERE id_user = ?',
-                (id_old, id_new, )
-            )
+
+            # Precisa ser lista (não tupla).
+            stats = [stat for stat in self.get_user_stats(id_new)]
+            self.add_stats(id_old, stats)
+
+            # Ao deletar o novo id, o user_stats desse novo vão ir junto.
             self.cursor.execute(
                 'DELETE FROM users WHERE id = ?', 
                 (id_new, )
