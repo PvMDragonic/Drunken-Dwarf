@@ -118,7 +118,7 @@ class Coleta():
         """
 
         db = Database()
-        cabecinhas_registradas = db.todos_jogadores()
+        cabecinhas_registradas = db.todos_jogadores(incluir_inativos = True)
         cabecinhas_atuais = await Coleta()._listar_membros_cla()
 
         if not cabecinhas_atuais:
@@ -135,17 +135,16 @@ class Coleta():
             try:
                 runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
                 if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
-                    db.deletar_jogador(id)
+                    db.arquivar_jogador(id)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
 
                 desconhecido = db.jogador_registrado(nome)
+                if not desconhecido:
+                    return # Usuário desativado.
+                
                 id_antigo = desconhecido[0]
                 stats_antigo = db.buscar_estatisticas(id_antigo)
-
-                # Pessoa nova que ainda não foi foi coletada.
-                if not stats_antigo:
-                    continue
 
                 scaler = StandardScaler()
                 cabecinhas_stats = np.array(db.buscar_todas_estatísticas(id_antigo))

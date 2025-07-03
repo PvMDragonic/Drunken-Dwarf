@@ -31,45 +31,73 @@ class Database():
             raise FileNotFoundError(f"Arquivo 'dkdw.sql' não foi encontrado.")
         
     def jogador_registrado(self, nome: str) -> tuple[int, str] | None:
-        """Retorna (id, nome) se o nome estiver registrado."""
+        """Retorna (id, nome) se o nome estiver registrado e no clã."""
 
         try:
-            self.cursor.execute("SELECT id_user, username FROM users_names WHERE username = ? ORDER BY name_date", (nome,))
-            return self.cursor.fetchone() or None
+            self.cursor.execute("""
+                SELECT un.id_user, un.username
+                FROM users_names un
+                JOIN users u ON un.id_user = u.id
+                WHERE un.username = ?
+                AND u.in_clan = 1
+            """, (nome,))
+            return self.cursor.fetchone()
         except Exception as e:
             print(f'Erro no banco ao verificar se jogador está registrado: {e}')
             return None
 
     def registrar_jogador(self, name: str, today: str) -> tuple[int, str] | None:
-        """Registra um novo jogador ao banco de dados e retorna seu (id, nome)."""
+        """Registra um novo jogador ao banco de dados (ou re-ativa um inativo) e retorna seu (id, nome)."""
 
         try:
-            self.cursor.execute("INSERT INTO users DEFAULT VALUES")
-            self.cursor.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
-            id = self.cursor.fetchone()[0]
-            self.cursor.execute(
-                "INSERT INTO users_names (id_user, username, name_date) VALUES (?, ?, ?)", 
-                (id, name, today, )
-            )
+            self.cursor.execute("SELECT id_user FROM users_names WHERE username = ?", (name, ))
+            id = self.cursor.fetchone()
+
+            # Pessoa saiu e voltou depois, com o mesmo nome (não é tijolinho).
+            if id:
+                self.cursor.execute("UPDATE users SET in_clan = 1 WHERE id = ?", (id[0], ))
+            # Randola (ou trocou de nome antes de voltar).
+            else: 
+                self.cursor.execute("INSERT INTO users DEFAULT VALUES")
+                self.cursor.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
+                id = self.cursor.fetchone()[0]
+                self.cursor.execute(
+                    "INSERT INTO users_names (id_user, username, name_date) VALUES (?, ?, ?)", 
+                    (id, name, today, )
+                )
+
             self.conn.commit()
             return self.jogador_registrado(name)
         except Exception as e:
             print(f'Erro no banco ao registrar jogador: {e}')
             return None
         
-    def todos_jogadores(self) -> list[tuple[int, str]] | None:
+    def todos_jogadores(self, incluir_inativos: bool = False) -> list[tuple[int, str]] | None:
         """Retorna todos os jogadores registrados como [(id, nome), ...]."""
 
         try:
-            self.cursor.execute("""
-                SELECT id_user, username
+            if incluir_inativos:
+                self.cursor.execute("""
+                    SELECT id_user, username
                     FROM users_names un
                     WHERE name_date = (
                         SELECT MAX(name_date)
                         FROM users_names
                         WHERE id_user = un.id_user
                     )
-            """)
+                """)
+            else:
+                self.cursor.execute("""
+                    SELECT un.id_user, un.username
+                    FROM users_names un
+                    JOIN users u ON un.id_user = u.id
+                    WHERE u.in_clan = 1
+                    AND un.name_date = (
+                        SELECT MAX(name_date)
+                        FROM users_names
+                        WHERE id_user = un.id_user
+                    );
+                """)
             return self.cursor.fetchall()
         except Exception as e:
             print(f'Erro no banco ao buscar todos os jogadores: {e}')
@@ -196,12 +224,24 @@ class Database():
             stats = [stat for stat in self.buscar_estatisticas(id_new)]
             self.adicionar_estatisticas(id_old, stats)
 
-            # Ao deletar o novo id, o user_stats desse novo vai ir junto.
-            self.deletar_jogador(id_new)
+            self.cursor.execute(
+                'DELETE FROM users_stats WHERE id_user = ?',
+                (id_new, )
+            )
 
-            # Não tem commit porque o deletar_jogador() já commita.
+            # Não tem commit porque o arquivar_jogador() já commita.
+            self.arquivar_jogador(id_new)
         except Exception as e:
             print(f'Erro no banco ao unir jogadores: {e}')
+
+    def arquivar_jogador(self, id: int):
+        """Inativa um jogador registrado por seu id, ao invés de deletar."""
+
+        try:
+            self.cursor.execute('UPDATE users SET in_clan = 0 WHERE id = ?', (id, ))
+            self.conn.commit()
+        except Exception as e:
+            print(f'Erro no banco ao inativar jogador: {e}')
 
     def deletar_jogador(self, id: int):
         """Apaga todos os registros de dado jogador por id."""
