@@ -141,7 +141,7 @@ class Coleta():
 
                 desconhecido = db.jogador_registrado(nome)
                 if not desconhecido:
-                    return # Usuário desativado.
+                    continue # Usuário desativado.
                 
                 id_antigo = desconhecido[0]
                 stats_antigo = db.buscar_estatisticas(id_antigo)
