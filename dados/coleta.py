@@ -200,8 +200,6 @@ class Coleta():
         # 'DKDW/Moderação' ou disc de testes.
         moderacao = bot.get_channel(1211472248326856724) or bot.get_channel(1123305689574539285)
 
-        await sleep(15)
-
         while True:
             agora = datetime.now()
 
