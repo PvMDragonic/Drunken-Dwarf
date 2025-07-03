@@ -162,7 +162,7 @@ class Coleta():
                 best_match, score = max(similaridades, key = lambda x: x[1])
 
                 # Se sair do clã e mudar de nome logo em seguida, cai aqui.
-                if score < 0.8: 
+                if score < 0.85: 
                     db.arquivar_jogador(id)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
