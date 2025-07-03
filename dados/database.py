@@ -132,7 +132,14 @@ class Database():
         """Retorna o último (xp, xp_date, rank) de um usuário por seu id."""
         
         try:
-            self.cursor.execute("SELECT xp, xp_date, rank FROM users_data WHERE id_user = ? ORDER BY xp_date DESC LIMIT 1", (id,))
+            self.cursor.execute("""
+                SELECT ud.xp, ud.xp_date, ur.rank
+                FROM users_data ud
+                JOIN ranks ur ON ud.id_rank = ur.id
+                WHERE ud.id_user = ?
+                ORDER BY ud.xp_date DESC
+                LIMIT 1;
+            """, (id,))
             return self.cursor.fetchone()
         except Exception as e:
             print(f'Erro no banco ao buscar último XP: {e}')
@@ -170,13 +177,13 @@ class Database():
             print(f'Erro no banco ao buscar histórico de nomes: {e}')
             return None
 
-    def adicionar_xp(self, id_user: int, rank: str, xp: int, kc: int, today: str):
+    def adicionar_xp(self, id_user: int, id_rank: int, xp: int, kc: int, today: str):
         """Adiciona um novo registro de XP feito no clã para dado jogador por id."""
         
         try:
             self.cursor.execute(
-                "INSERT INTO users_data (id_user, rank, xp, kc, xp_date) VALUES (?, ?, ?, ?, ?)",
-                (id_user, rank, xp, kc, today)
+                "INSERT INTO users_data (id_user, id_rank, xp, kc, xp_date) VALUES (?, ?, ?, ?, ?)",
+                (id_user, id_rank, xp, kc, today)
             )
             self.conn.commit()
         except Exception as e:

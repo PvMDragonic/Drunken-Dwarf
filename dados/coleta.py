@@ -30,18 +30,18 @@ class Coleta():
         db = Database()
 
         RANKS = {
-            'Owner': 'Dono',
-            'Deputy Owner': 'Vice-Dono',
-            'Overseer': 'Fiscal',
-            'Coordinator': 'Coord.',
-            'Organiser': 'Org.',
-            'Admin': 'Admin.',
-            'General': 'General',
-            'Captain': 'Capitão',
-            'Lieutenant': 'Tenente',
-            'Sergeant': 'Sargento',
-            'Corporal': 'Cabo',
-            'Recruit': 'Recruta'
+            'Owner': 1,
+            'Deputy Owner': 2,
+            'Overseer': 3,
+            'Coordinator': 4,
+            'Organiser': 5,
+            'Admin': 6,
+            'General': 7,
+            'Captain': 8,
+            'Lieutenant': 9,
+            'Sergeant': 10,
+            'Corporal': 11,
+            'Recruit': 12
         }
 
         for _, cringe in cabecinhas.iterrows():
