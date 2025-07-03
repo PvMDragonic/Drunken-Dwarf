@@ -2,23 +2,27 @@ import sqlite3
 import os
 
 class Database():
+    """Classe responsável por conectar e acessar o banco de dados sqlite."""
+
     def __init__(self):
         self.conn = None
         self.cursor = None
 
         db_exists = os.path.isfile('dados/dkdw.db')
 
-        self.connect()
+        self.conectar()
 
         if not db_exists:
             print("Banco de dados não encontrado. Criando novo banco de dados e tabelas...")
-            self.setup_database()
+            self.criar_banco()
 
-    def connect(self):
+    def conectar(self):
         self.conn = sqlite3.connect('dados/dkdw.db')
         self.cursor = self.conn.cursor()
 
-    def setup_database(self):
+    def criar_banco(self):
+        """Executa o script para criação das tabelas no banco de dados."""
+
         try:
             with open('dados/dkdw.sql', 'r') as file:
                 self.cursor.executescript(file.read())
@@ -26,15 +30,19 @@ class Database():
         except FileNotFoundError:
             raise FileNotFoundError(f"Arquivo 'dkdw.sql' não foi encontrado.")
         
-    def user_exists(self, name: str) -> tuple[int, str] | None:
+    def jogador_registrado(self, nome: str) -> tuple[int, str] | None:
+        """Retorna (id, nome) se o nome estiver registrado."""
+
         try:
-            self.cursor.execute("SELECT id_user, username FROM users_names WHERE username = ? ORDER BY name_date", (name,))
-            return self.cursor.fetchone()
+            self.cursor.execute("SELECT id_user, username FROM users_names WHERE username = ? ORDER BY name_date", (nome,))
+            return self.cursor.fetchone() or None
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao verificar se jogador está registrado: {e}')
             return None
 
-    def create_user(self, name: str, today: str) -> tuple[int, str] | None:
+    def registrar_jogador(self, name: str, today: str) -> tuple[int, str] | None:
+        """Registra um novo jogador ao banco de dados e retorna seu (id, nome)."""
+
         try:
             self.cursor.execute("INSERT INTO users DEFAULT VALUES")
             self.cursor.execute("SELECT * FROM users ORDER BY id DESC LIMIT 1")
@@ -44,12 +52,14 @@ class Database():
                 (id, name, today, )
             )
             self.conn.commit()
-            return self.user_exists(name)
+            return self.jogador_registrado(name)
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao registrar jogador: {e}')
             return None
         
-    def get_all_users(self) -> list[tuple[int, str]] | None:
+    def todos_jogadores(self) -> list[tuple[int, str]] | None:
+        """Retorna todos os jogadores registrados como [(id, nome), ...]."""
+
         try:
             self.cursor.execute("""
                 SELECT id_user, username
@@ -62,10 +72,12 @@ class Database():
             """)
             return self.cursor.fetchall()
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao buscar todos os jogadores: {e}')
             return None
         
-    def get_all_users_with_stats(self, excluding_id: int) -> list[tuple[int, str]] | None:
+    def todos_jogadores_com_stats(self, excluding_id: int) -> list[tuple[int, str]] | None:
+        """Retorna (id_user, username) para todo aquele que tiver um registro em 'users_stats'."""
+        
         try:
             self.cursor.execute("""
                 SELECT un.id_user, un.username
@@ -88,44 +100,51 @@ class Database():
             print(f'Database error: {e}')
             return None
 
-    def get_last_xp(self, id: int) -> tuple[int, str] | None:
+    def buscar_ultimo_xp(self, id: int) -> tuple[int, str, str] | None:
+        """Retorna o último (xp, xp_date, rank) de um usuário por seu id."""
+        
         try:
             self.cursor.execute("SELECT xp, xp_date, rank FROM users_data WHERE id_user = ? ORDER BY xp_date DESC LIMIT 1", (id,))
             return self.cursor.fetchone()
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao buscar último XP: {e}')
             return None
         
-    def get_user_stats(self, id: int) -> tuple[int] | None:
+    def buscar_estatisticas(self, id: int) -> tuple[int] | None:
+        """Retorna as 150 estatísticas dos hi-scores de dado id."""
+
         try:
             self.cursor.execute("SELECT * FROM users_stats WHERE id_user = ?", (id,))
             return self.cursor.fetchone()[2:]
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao buscar estatística de jogador: {e}')
             return None
         
-    def get_all_user_stats(self, excluding_id: int) -> tuple[tuple[int]] | None:
+    def buscar_todas_estatísticas(self, excluding_id: int) -> tuple[tuple[int]] | None:
+        """Retorna as 150 estatísticas dos hi-scores de todos, menos de dado id."""
+        
         try:
             columns = ', '.join([f"stat{i+1}" for i in range(150)])
             self.cursor.execute(f"SELECT {columns} FROM users_stats WHERE id_user != ? ORDER BY id_user", (excluding_id, ))
             return self.cursor.fetchall()
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao buscar todas as estatísticas: {e}')
             return None
         
-    def get_user_name_history(self, name: str) -> tuple[str, str] | None:
+    def buscar_historico_nomes(self, name: str) -> tuple[str, str] | None:
+        """Retorna o todos os nomes registrados de dado jogador."""
+
         try:
-            id, _ = self.user_exists(name)
-            self.cursor.execute(
-                "SELECT username, name_date FROM users_names WHERE id_user = ?", 
-                (id, )
-            )
+            id, _ = self.jogador_registrado(name)
+            self.cursor.execute("SELECT username, name_date FROM users_names WHERE id_user = ?", (id, ))
             return self.cursor.fetchall()
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao buscar histórico de nomes: {e}')
             return None
 
-    def add_xp(self, id_user: int, rank: str, xp: int, kc: int, today: str):
+    def adicionar_xp(self, id_user: int, rank: str, xp: int, kc: int, today: str):
+        """Adiciona um novo registro de XP feito no clã para dado jogador por id."""
+        
         try:
             self.cursor.execute(
                 "INSERT INTO users_data (id_user, rank, xp, kc, xp_date) VALUES (?, ?, ?, ?, ?)",
@@ -133,9 +152,11 @@ class Database():
             )
             self.conn.commit()
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao adicionar XP: {e}')
 
-    def add_stats(self, id_user: int, stats: list[int]):
+    def adicionar_estatisticas(self, id_user: int, stats: list[int]):
+        """Adiciona (ou atualiza) as 150 estatísticas de dado jogador por id."""
+
         try:
             columns = [f"stat{i+1}" for i in range(len(stats))]
     
@@ -156,9 +177,11 @@ class Database():
             self.cursor.execute(sql, params)
             self.conn.commit()
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao adicionar estatísticas: {e}')
 
-    def merge_users(self, id_old: int, id_new: int):
+    def unir_registros(self, id_old: int, id_new: int):
+        """Muda o 'id_user' do jogador com 'id_new' para 'id_old', unificando seus registros."""
+
         try:
             self.cursor.execute(
                 'UPDATE users_names SET id_user = ? WHERE id_user = ?',
@@ -170,25 +193,27 @@ class Database():
             )
 
             # Precisa ser lista (não tupla).
-            stats = [stat for stat in self.get_user_stats(id_new)]
-            self.add_stats(id_old, stats)
+            stats = [stat for stat in self.buscar_estatisticas(id_new)]
+            self.adicionar_estatisticas(id_old, stats)
 
             # Ao deletar o novo id, o user_stats desse novo vai ir junto.
-            self.delete_user(id_new)
+            self.deletar_jogador(id_new)
 
-            # Não tem commit porque o delete_user() já commita.
+            # Não tem commit porque o deletar_jogador() já commita.
         except Exception as e:
-            print(f'Database MOGGED: {e}')
+            print(f'Erro no banco ao unir jogadores: {e}')
 
-    def delete_user(self, id: str):
+    def deletar_jogador(self, id: int):
+        """Apaga todos os registros de dado jogador por id."""
+
         try:
             # Necessário pra enforçar foreign key e ON CASCADE DELETE funcionar.
             self.cursor.execute('PRAGMA foreign_keys = ON')
             self.cursor.execute('DELETE FROM users WHERE id = ?', (id, ))
             self.conn.commit()
         except Exception as e:
-            print(f'Database error: {e}')
+            print(f'Erro no banco ao deletar jogador: {e}')
 
-    def close(self):
+    def fechar(self):
         if self.conn:
             self.conn.close()

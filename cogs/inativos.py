@@ -142,7 +142,7 @@ class Inativos(commands.Cog):
     async def inativos(self, ctx, *args):
         hoje = datetime.now().date()
         db = Database()
-        membros = db.get_all_users()
+        membros = db.todos_jogadores()
 
         try:
             filtro_tempo = int(args[0])
@@ -155,13 +155,15 @@ class Inativos(commands.Cog):
 
         inativos = []
         for id, nome in membros:
-            xp, xp_data, rank = db.get_last_xp(id)
+            xp, xp_data, rank = db.buscar_ultimo_xp(id)
             xp_data = datetime.strptime(xp_data, '%Y-%m-%d').date()
             tempo_inativo = (hoje - xp_data).days 
 
             # 1 dia inativo pode ser porque rodou antes da coleta diária.
             if tempo_inativo >= filtro_tempo and rank not in EXCLUIDOS: 
                 inativos.append((nome, rank, xp, tempo_inativo))
+                
+        db.fechar()
 
         filtro_tempo = f"{filtro_tempo} dia{'s' if filtro_tempo != 1 else ''}"
 

@@ -49,11 +49,11 @@ class Coleta():
             xp_atual = cringe[' Total XP'] # Sim, tem espaço.
             rank = RANKS[cringe[' Clan Rank']]
             kills = cringe[' Kills']
-            id, _ = db.user_exists(nome) or db.create_user(nome, hoje)
+            id, _ = db.jogador_registrado(nome) or db.registrar_jogador(nome, hoje)
 
-            ultimo_registro = db.get_last_xp(id)
+            ultimo_registro = db.buscar_ultimo_xp(id)
             if not ultimo_registro:
-                db.add_xp(id, rank, xp_atual, kills, hoje)
+                db.adicionar_xp(id, rank, xp_atual, kills, hoje)
                 continue
 
             ultimo_xp, data_xp, _ = ultimo_registro 
@@ -63,8 +63,8 @@ class Coleta():
                 continue
 
             if xp_atual > ultimo_xp:
-                db.add_xp(id, rank, xp_atual, kills, hoje)
-        db.close()
+                db.adicionar_xp(id, rank, xp_atual, kills, hoje)
+        db.fechar()
             
     @staticmethod
     async def _listar_membros_cla(completo: bool = False) -> None | list[str] | pd.DataFrame:
@@ -102,12 +102,12 @@ class Coleta():
                     
                     stats_formatados = re.split(r'[,\n]+', stats)[0:-1]
 
-                    usuario = db.user_exists(nome)
+                    usuario = db.jogador_registrado(nome)
                     if usuario:
-                        db.add_stats(usuario[0], stats_formatados)
+                        db.adicionar_estatisticas(usuario[0], stats_formatados)
                 except Exception as e:
                     print(f"Erro atualizando dados de {nome}: {e}")
-        db.close()
+        db.fechar()
 
     @staticmethod
     async def _verificar_alterados(enviar_relatorio: bool, canal: TextChannel):
@@ -118,11 +118,11 @@ class Coleta():
         """
 
         db = Database()
-        cabecinhas_registradas = db.get_all_users()
+        cabecinhas_registradas = db.todos_jogadores()
         cabecinhas_atuais = await Coleta()._listar_membros_cla()
 
         if not cabecinhas_atuais:
-            db.close()
+            db.fechar()
             return
 
         # Registrados que não estão mais no clã.
@@ -135,20 +135,20 @@ class Coleta():
             try:
                 runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
                 if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
-                    db.delete_user(id)
+                    db.deletar_jogador(id)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
 
-                desconhecido = db.user_exists(nome)
+                desconhecido = db.jogador_registrado(nome)
                 id_antigo = desconhecido[0]
-                stats_antigo = db.get_user_stats(id_antigo)
+                stats_antigo = db.buscar_estatisticas(id_antigo)
 
                 # Pessoa nova que ainda não foi foi coletada.
                 if not stats_antigo:
                     continue
 
                 scaler = StandardScaler()
-                cabecinhas_stats = np.array(db.get_all_user_stats(id_antigo))
+                cabecinhas_stats = np.array(db.buscar_todas_estatísticas(id_antigo))
                 scaler.fit(cabecinhas_stats)
                 dados_historicos = scaler.transform(cabecinhas_stats)
 
@@ -156,7 +156,7 @@ class Coleta():
                 ultimo_stats = scaler.transform(stats_antigo)[0]       # shape (150,)
 
                 similaridades = []
-                for id_conhecido, vetor_conhecido in zip(db.get_all_users_with_stats(id_antigo), dados_historicos):
+                for id_conhecido, vetor_conhecido in zip(db.todos_jogadores_com_stats(id_antigo), dados_historicos):
                     sim = 1 - cosine(ultimo_stats, vetor_conhecido)
                     similaridades.append((id_conhecido, sim))
 
@@ -164,12 +164,12 @@ class Coleta():
                 novo_id, novo_nome = best_match
                 sim = f'{(score * 100):.2f}%'
 
-                db.merge_users(id_antigo, novo_id)
+                db.unir_registros(id_antigo, novo_id)
                 novos_nomes.append((nome, novo_nome, sim))
                 print(f"({id_antigo} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
             except Exception as e:
                 print(f'Erro atualizando {nome} para novo nome: {e}')
-        db.close()
+        db.fechar()
 
         if not enviar_relatorio:
             return

@@ -81,8 +81,8 @@ class Moderacao(commands.Cog):
         
         db = Database()
         nome = ' '.join(args)
-        historico = db.get_user_name_history(nome)
-        db.close()
+        historico = db.buscar_historico_nomes(nome)
+        db.fechar()
 
         if historico:
             embed = discord.Embed(
