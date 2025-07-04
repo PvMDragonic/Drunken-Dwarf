@@ -196,7 +196,7 @@ class Coleta():
             for nome_antigo, nome_novo, sim in novos_nomes:
                 embed.add_field(
                     name = nome_antigo, 
-                    value = f'Trocou de nome para `{nome_novo}` ({sim} de certeza).', 
+                    value = f'Trocou de nome para `{nome_novo}`.', 
                     inline = False
                 )
 
