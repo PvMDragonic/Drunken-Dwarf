@@ -133,8 +133,7 @@ class Coleta():
 
         for id, nome in desaparecidos:
             try:
-                desaparecido = db.jogador_registrado(nome)
-                if not desaparecido:
+                if not db.jogador_registrado(nome):
                     continue # Usuário desativado.
 
                 runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
@@ -144,11 +143,10 @@ class Coleta():
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
                     continue
                 
-                id_antigo = desaparecido[0]
-                stats_antigo = db.buscar_estatisticas(id_antigo)
+                stats_antigo = db.buscar_estatisticas(id)
 
                 scaler = StandardScaler()
-                cabecinhas_stats = np.array(db.buscar_todas_estatísticas(id_antigo))
+                cabecinhas_stats = np.array(db.buscar_todas_estatísticas(id))
                 scaler.fit(cabecinhas_stats)
                 dados_historicos = scaler.transform(cabecinhas_stats)
 
@@ -156,7 +154,7 @@ class Coleta():
                 ultimo_stats = scaler.transform(stats_antigo)[0]       # shape (150,)
 
                 similaridades = []
-                for id_conhecido, vetor_conhecido in zip(db.todos_jogadores_com_stats(id_antigo), dados_historicos):
+                for id_conhecido, vetor_conhecido in zip(db.todos_jogadores_com_stats(id), dados_historicos):
                     sim = 1 - cosine(ultimo_stats, vetor_conhecido)
                     similaridades.append((id_conhecido, sim))
 
@@ -166,15 +164,15 @@ class Coleta():
                 if score < 0.85: 
                     db.arquivar_jogador(id)
                     saidas.append(nome)
-                    print(f"Jogador ({id_antigo} '{nome}') deletado do Clã por ter saído.")
+                    print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
                     continue
 
                 novo_id, novo_nome = best_match
                 sim = f'{(score * 100):.2f}%'
 
-                db.unir_registros(id_antigo, novo_id)
+                db.unir_registros(id, novo_id)
                 novos_nomes.append((nome, novo_nome, sim))
-                print(f"({id_antigo} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
+                print(f"({id} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
             except Exception as e:
                 print(f'Erro atualizando {nome} para novo nome: {e}')
         db.fechar()
