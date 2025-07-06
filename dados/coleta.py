@@ -133,18 +133,18 @@ class Coleta():
 
         for id, nome in desaparecidos:
             try:
+                desaparecido = db.jogador_registrado(nome)
+                if not desaparecido:
+                    continue # Usuário desativado.
+
                 runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
                 if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
                     db.arquivar_jogador(id)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
                     continue
-
-                desconhecido = db.jogador_registrado(nome)
-                if not desconhecido:
-                    continue # Usuário desativado.
                 
-                id_antigo = desconhecido[0]
+                id_antigo = desaparecido[0]
                 stats_antigo = db.buscar_estatisticas(id_antigo)
 
                 scaler = StandardScaler()
@@ -166,7 +166,7 @@ class Coleta():
                 if score < 0.85: 
                     db.arquivar_jogador(id)
                     saidas.append(nome)
-                    print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
+                    print(f"Jogador ({id_antigo} '{nome}') deletado do Clã por ter saído.")
                     continue
 
                 novo_id, novo_nome = best_match
