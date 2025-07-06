@@ -138,6 +138,7 @@ class Coleta():
                     db.arquivar_jogador(id)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
+                    continue
 
                 desconhecido = db.jogador_registrado(nome)
                 if not desconhecido:
@@ -166,6 +167,7 @@ class Coleta():
                     db.arquivar_jogador(id)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
+                    continue
 
                 novo_id, novo_nome = best_match
                 sim = f'{(score * 100):.2f}%'
