@@ -182,8 +182,7 @@ class Coleta():
         
         if saidas or novos_nomes:
             embed = Embed(
-                title = f"Relatório de jogadores",
-                description = 'Lista de quem saiu e/ou trocou de nome.',
+                title = f"Relatório de saídas & nomes",
                 color = Color.blue()
             )
 
