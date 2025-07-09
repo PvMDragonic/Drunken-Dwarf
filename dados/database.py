@@ -30,17 +30,21 @@ class Database():
         except FileNotFoundError:
             raise FileNotFoundError(f"Arquivo 'dkdw.sql' não foi encontrado.")
         
-    def jogador_registrado(self, nome: str) -> tuple[int, str] | None:
-        """Retorna (id, nome) se o nome estiver registrado e no clã."""
+    def jogador_registrado(self, nome: str, incluir_arqv: bool = False) -> tuple[int, str] | None:
+        """Retorna (id, nome) se o nome estiver registrado e (opcionalmente) no clã."""
 
         try:
-            self.cursor.execute("""
+            query = """
                 SELECT un.id_user, un.username
                 FROM users_names un
                 JOIN users u ON un.id_user = u.id
                 WHERE un.username = ?
-                AND u.in_clan = 1
-            """, (nome,))
+            """
+            
+            if not incluir_arqv:
+                query += " AND u.in_clan = 1"
+
+            self.cursor.execute(query, (nome,))
             return self.cursor.fetchone()
         except Exception as e:
             print(f'Erro no banco ao verificar se jogador está registrado: {e}')
@@ -170,7 +174,7 @@ class Database():
         """Retorna o todos os nomes registrados de dado jogador."""
 
         try:
-            id, _ = self.jogador_registrado(name)
+            id, _ = self.jogador_registrado(name, True)
             self.cursor.execute("SELECT username, name_date FROM users_names WHERE id_user = ?", (id, ))
             return self.cursor.fetchall()
         except Exception as e:
