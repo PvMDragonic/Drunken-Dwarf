@@ -128,8 +128,9 @@ class Coleta():
         # Registrados que não estão mais no clã.
         desaparecidos = [(id, nome) for id, nome in cabecinhas_registradas if nome not in cabecinhas_atuais]
 
-        saidas = []
+        hoje = datetime.now().date()
         novos_nomes = []
+        saidas = []
 
         for id, nome in desaparecidos:
             try:
@@ -138,7 +139,7 @@ class Coleta():
 
                 runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
                 if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
-                    db.arquivar_jogador(id)
+                    db.arquivar_jogador(id, hoje)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
                     continue
@@ -162,7 +163,7 @@ class Coleta():
 
                 # Se sair do clã e mudar de nome logo em seguida, cai aqui.
                 if score < 0.85: 
-                    db.arquivar_jogador(id)
+                    db.arquivar_jogador(id, hoje)
                     saidas.append(nome)
                     print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
                     continue

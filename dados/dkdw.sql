@@ -8,6 +8,20 @@ CREATE TABLE ranks (
     rank TEXT NOT NULL
 )
 
+CREATE TABLE users_join (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_user INTEGER NOT NULL,
+    join_date DATE NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES users(id) ON DELETE CASCADE
+)
+
+CREATE TABLE users_leave (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_user INTEGER NOT NULL,
+    leave_date DATE NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES users(id) ON DELETE CASCADE
+)
+
 CREATE TABLE users_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_user INTEGER NOT NULL,

@@ -50,11 +50,11 @@ class Database():
             print(f'Erro no banco ao verificar se jogador está registrado: {e}')
             return None
 
-    def registrar_jogador(self, name: str, today: str) -> tuple[int, str] | None:
+    def registrar_jogador(self, nome: str, hoje: str) -> tuple[int, str] | None:
         """Registra um novo jogador ao banco de dados (ou re-ativa um inativo) e retorna seu (id, nome)."""
 
         try:
-            self.cursor.execute("SELECT id_user FROM users_names WHERE username = ?", (name, ))
+            self.cursor.execute("SELECT id_user FROM users_names WHERE username = ?", (nome, ))
             id = self.cursor.fetchone()
 
             # Pessoa saiu e voltou depois, com o mesmo nome (não é tijolinho).
@@ -67,11 +67,15 @@ class Database():
                 id = self.cursor.fetchone()[0]
                 self.cursor.execute(
                     "INSERT INTO users_names (id_user, username, name_date) VALUES (?, ?, ?)", 
-                    (id, name, today, )
+                    (id, nome, hoje, )
                 )
+            self.cursor.execute(
+                'INSERT INTO users_join (id_user, join_date) VALUES (?, ?)',
+                (id, hoje, )
+            )
 
             self.conn.commit()
-            return self.jogador_registrado(name)
+            return self.jogador_registrado(nome)
         except Exception as e:
             print(f'Erro no banco ao registrar jogador: {e}')
             return None
@@ -245,11 +249,18 @@ class Database():
         except Exception as e:
             print(f'Erro no banco ao unir jogadores: {e}')
 
-    def arquivar_jogador(self, id: int):
+    def arquivar_jogador(self, id: int, data: str):
         """Inativa um jogador registrado por seu id, ao invés de deletar."""
 
         try:
-            self.cursor.execute('UPDATE users SET in_clan = 0 WHERE id = ?', (id, ))
+            self.cursor.execute(
+                'UPDATE users SET in_clan = 0 WHERE id = ?', 
+                (id, )
+            )
+            self.cursor.execute(
+                'INSERT INTO users_leave (id_user, leave_date) VALUES (?, ?)',
+                (id, data, )
+            )
             self.conn.commit()
         except Exception as e:
             print(f'Erro no banco ao inativar jogador: {e}')
