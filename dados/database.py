@@ -239,13 +239,8 @@ class Database():
             stats = [stat for stat in self.buscar_estatisticas(id_new)]
             self.adicionar_estatisticas(id_old, stats)
 
-            self.cursor.execute(
-                'DELETE FROM users_stats WHERE id_user = ?',
-                (id_new, )
-            )
-
-            # Não tem commit porque o arquivar_jogador() já commita.
-            self.arquivar_jogador(id_new)
+            # Não tem commit porque o deletar_jogador() já commita.
+            self.deletar_jogador(id_new)
         except Exception as e:
             print(f'Erro no banco ao unir jogadores: {e}')
 
