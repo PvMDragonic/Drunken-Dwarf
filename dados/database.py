@@ -30,12 +30,12 @@ class Database():
         except FileNotFoundError:
             raise FileNotFoundError(f"Arquivo 'dkdw.sql' não foi encontrado.")
         
-    def jogador_registrado(self, nome: str, incluir_arqv: bool = False) -> tuple[int, str] | None:
-        """Retorna (id, nome) se o nome estiver registrado e (opcionalmente) no clã."""
+    def jogador_registrado(self, nome: str, incluir_arqv: bool = False) -> tuple[int, str, bool] | None:
+        """Retorna (id, nome, no_clan) se o nome estiver registrado e (opcionalmente) no clã."""
 
         try:
             query = """
-                SELECT un.id_user, un.username
+                SELECT un.id_user, un.username, u.in_clan
                 FROM users_names un
                 JOIN users u ON un.id_user = u.id
                 WHERE un.username = ?
@@ -178,7 +178,7 @@ class Database():
         """Retorna o todos os nomes registrados de dado jogador."""
 
         try:
-            id, _ = self.jogador_registrado(name, True)
+            id = (self.jogador_registrado(name, True))[0]
             self.cursor.execute("SELECT username, name_date FROM users_names WHERE id_user = ?", (id, ))
             return self.cursor.fetchall()
         except Exception as e:
@@ -222,10 +222,22 @@ class Database():
         except Exception as e:
             print(f'Erro no banco ao adicionar estatísticas: {e}')
 
-    def unir_registros(self, id_old: int, id_new: int):
+    def unir_registros(self, id_old: int, id_new: int, jogador_ativo: bool):
         """Muda o 'id_user' do jogador com 'id_new' para 'id_old', unificando seus registros."""
 
         try:
+            # Estava inativo, daí voltou tempos depois com outro nome.
+            if not jogador_ativo:
+                self.cursor.execute(
+                    'UPDATE users_join SET id_user = ? WHERE id_user = ?',
+                    (id_old, id_new, )
+                )
+                # Improvável que tenha algo, mas só no caso de eu estar esquecendo algo.
+                self.cursor.execute(
+                    'UPDATE users_leave SET id_user = ? WHERE id_user = ?',
+                    (id_old, id_new, )
+                )
+
             self.cursor.execute(
                 'UPDATE users_names SET id_user = ? WHERE id_user = ?',
                 (id_old, id_new, )

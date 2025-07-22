@@ -49,7 +49,7 @@ class Coleta():
             xp_atual = cringe[' Total XP'] # Sim, tem espaço.
             rank = RANKS[cringe[' Clan Rank']]
             kills = cringe[' Kills']
-            id, _ = db.jogador_registrado(nome) or db.registrar_jogador(nome, hoje)
+            id = (db.jogador_registrado(nome) or db.registrar_jogador(nome, hoje))[0]
 
             ultimo_registro = db.buscar_ultimo_xp(id)
             if not ultimo_registro:
@@ -134,19 +134,20 @@ class Coleta():
 
         for id, nome in desaparecidos:
             try:
-                if not db.jogador_registrado(nome):
-                    continue # Usuário desativado.
+                jogador_ativo = (db.jogador_registrado(nome, True))[2]
 
-                runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
-                if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
-                    db.arquivar_jogador(id, hoje)
-                    saidas.append(nome)
-                    print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
-                    continue
-                
+                # Se o usuário já está desativado, não precisa verificar se ele saiu do clã.
+                if jogador_ativo:
+                    runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
+                    if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
+                        db.arquivar_jogador(id, hoje)
+                        saidas.append(nome)
+                        print(f"Jogador ({id} '{nome}') saiu do clã.")
+                        continue
+
                 stats_antigo = db.buscar_estatisticas(id)
 
-                scaler = StandardScaler()
+                scaler = StandardScaler()     
                 cabecinhas_stats = np.array(db.buscar_todas_estatísticas(id))
                 scaler.fit(cabecinhas_stats)
                 dados_historicos = scaler.transform(cabecinhas_stats)
@@ -162,16 +163,17 @@ class Coleta():
                 best_match, score = max(similaridades, key = lambda x: x[1])
 
                 # Se sair do clã e mudar de nome logo em seguida, cai aqui.
-                if score < 0.85: 
-                    db.arquivar_jogador(id, hoje)
-                    saidas.append(nome)
-                    print(f"Jogador ({id} '{nome}') deletado do Clã por ter saído.")
+                if score < 0.95: 
+                    if jogador_ativo:
+                        db.arquivar_jogador(id, hoje)
+                        saidas.append(nome)
+                        print(f"Jogador ({id} '{nome}') saiu do clã.")
                     continue
 
                 novo_id, novo_nome = best_match
                 sim = f'{(score * 100):.2f}%'
 
-                db.unir_registros(id, novo_id)
+                db.unir_registros(id, novo_id, jogador_ativo)
                 novos_nomes.append((nome, novo_nome, sim))
                 print(f"({id} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
             except Exception as e:
