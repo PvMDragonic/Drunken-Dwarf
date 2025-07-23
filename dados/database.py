@@ -176,13 +176,57 @@ class Database():
             print(f'Erro no banco ao buscar todas as estatísticas: {e}')
             return None
         
-    def buscar_historico_nomes(self, name: str) -> tuple[str, str] | None:
-        """Retorna o todos os nomes registrados de dado jogador."""
+    def buscar_historico_jogador(self, name: str) -> tuple[str, str] | None:
+        """Retorna o todos os registros de dado jogador."""
 
         try:
             id = (self.jogador_registrado(name, True))[0]
-            self.cursor.execute("SELECT username, name_date FROM users_names WHERE id_user = ?", (id, ))
-            return self.cursor.fetchall()
+            self.cursor.execute("""
+                SELECT
+                    NULL,
+                    NULL,
+                    'entrou',
+                    uj.join_date
+                FROM users_join uj
+                WHERE uj.id_user = ?
+                                
+                UNION ALL
+                                
+                SELECT
+                    NULL,
+                    NULL,
+                    'saiu',
+                    ul.leave_date
+                FROM users_leave ul
+                WHERE ul.id_user = ?
+
+                UNION ALL
+
+                SELECT
+                    un.username,
+                    (
+                        SELECT un_prev.username
+                        FROM users_names un_prev
+                        WHERE un_prev.id_user = un.id_user
+                        AND un_prev.id < un.id
+                        ORDER BY un_prev.id DESC
+                        LIMIT 1
+                    ),
+                    'nome',
+                    un.name_date
+                FROM users_names un
+                WHERE un.id_user = ?
+            """, (id, id, id, ))
+
+            historico = self.cursor.fetchall()
+
+            return sorted(
+                historico,
+                key = lambda item: (
+                    item[3], 
+                    { "entrou": 0, "nome": 1, "saiu": 2 }.get(item[2], 99)
+                )
+            )            
         except Exception as e:
             print(f'Erro no banco ao buscar histórico de nomes: {e}')
             return None

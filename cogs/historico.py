@@ -105,22 +105,27 @@ class Historico(commands.Cog):
             await paginator.msg_inicial(ctx)
         else:
             nome = ' '.join(args)
-            historico = db.buscar_historico_nomes(nome)
+            historico = db.buscar_historico_jogador(nome)
             db.fechar()
 
             if historico:
-                embed = discord.Embed(
-                    title = f"Histórico de nomes de {nome}:",
-                    color = discord.Color.blue()
-                )
-                for nick, data in historico: 
+                description = []
+                for nick, nick_anterior, tipo, data in historico: 
                     data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
-                    embed.add_field(
-                        name = nick, 
-                        value = f'Alterado em **{data_formatada}**',
-                        inline = False
-                    )
-                await ctx.send(embed = embed)
+                    if tipo == 'nome':
+                        if nick_anterior == None:
+                            continue
+                        description.append(f"`{nick_anterior}` → `{nick}` ({data_formatada})")
+                    elif tipo == 'entrou':
+                        description.append(f"`Entrou no clã` ({data_formatada})")
+                    elif tipo == 'saiu':
+                        description.append(f"`Saiu do clã` ({data_formatada})")
+                    
+                await ctx.send(embed = discord.Embed(
+                    title = f"Histórico de __{nome}__:",
+                    description = '\n'.join(description),
+                    color = discord.Color.blue()
+                ))
             else:
                 await ctx.send(f'Não há histórico para "{nome}"! {ctx.author.mention}')
 
