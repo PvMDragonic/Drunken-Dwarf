@@ -1,3 +1,5 @@
+from collections import defaultdict
+from datetime import datetime, timedelta
 import sqlite3
 import os
 
@@ -183,6 +185,104 @@ class Database():
             return self.cursor.fetchall()
         except Exception as e:
             print(f'Erro no banco ao buscar histórico de nomes: {e}')
+            return None
+
+    def historico_geral_mes(self, dias: int) -> dict | None:
+        """Retorna o histórico de membros do último mês (30 dias)."""
+
+        try:
+            data_limite = (datetime.now() - timedelta(days = int(dias))).date()
+
+            self.cursor.execute("""
+                -- JOIN EVENTS
+                SELECT
+                    uj.id_user,
+                    (
+                        SELECT un.username
+                        FROM users_names un
+                        WHERE un.id_user = uj.id_user
+                        AND un.name_date <= uj.join_date
+                        ORDER BY un.name_date DESC
+                        LIMIT 1
+                    ) AS username,
+                    NULL AS previous_username,
+                    'entrou' AS change_type,
+                    uj.join_date AS change_date
+                FROM users_join uj
+                WHERE uj.join_date >= ?
+
+                UNION ALL
+
+                -- LEAVE EVENTS
+                SELECT
+                    ul.id_user,
+                    (
+                        SELECT un.username
+                        FROM users_names un
+                        WHERE un.id_user = ul.id_user
+                        AND un.name_date <= ul.leave_date
+                        ORDER BY un.name_date DESC
+                        LIMIT 1
+                    ) AS username,
+                    NULL AS previous_username,
+                    'saiu' AS change_type,
+                    ul.leave_date AS change_date
+                FROM users_leave ul
+                WHERE ul.leave_date >= ?
+
+                UNION ALL
+
+                -- NAME CHANGE EVENTS
+                SELECT
+                    un.id_user,
+                    un.username AS username,
+                    (
+                        SELECT un_prev.username
+                        FROM users_names un_prev
+                        WHERE un_prev.id_user = un.id_user
+                        AND un_prev.id < un.id
+                        ORDER BY un_prev.id DESC
+                        LIMIT 1
+                    ) AS previous_username,
+                    'nome' AS change_type,
+                    un.name_date AS change_date
+                FROM users_names un
+                WHERE un.name_date >= ?
+
+                ORDER BY id_user, change_date;
+            """, (data_limite, data_limite, data_limite, ))
+            
+            query_mostro = self.cursor.fetchall()
+
+            historico = defaultdict(list)
+
+            for linha in query_mostro:
+                id_user, username, previous_username, change_type, change_date = linha
+                historico[id_user].append({
+                    "tipo": change_type,
+                    "data": change_date,
+                    "nome": username,
+                    "nome_antigo": previous_username
+                })
+
+            for changes in historico.values():
+                # Ordena o que cada um fez pela data, vide 
+                # a prioridade abaixo para datas iguais.
+                changes.sort(key = lambda c: (
+                    datetime.strptime(c["data"], "%Y-%m-%d"),
+                    { "entrou": 0, "nome": 1, "saiu": 2 }.get(c["tipo"], 99)
+                ))
+
+            return dict(
+                # Ordena o dicionário como um todo pela data 
+                # do primeiro evento de cada pessoa.
+                sorted(
+                    historico.items(),
+                    key = lambda item: datetime.strptime(item[1][0]["data"], "%Y-%m-%d")
+                )
+            )
+        except Exception as e:
+            print(f'Erro no banco ao buscar histórico do último mês: {e}')
             return None
 
     def adicionar_xp(self, id_user: int, id_rank: int, xp: int, kc: int, today: str):

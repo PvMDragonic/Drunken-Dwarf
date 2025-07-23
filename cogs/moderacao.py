@@ -4,8 +4,6 @@ from datetime import datetime
 import discord
 import asyncio
 
-from dados.database import Database
-
 class Moderacao(commands.Cog):
     """Cog responsável por comandos da Moderação/Staff."""
 
@@ -73,32 +71,6 @@ class Moderacao(commands.Cog):
             ctx.message.author.mention, 
             embed = embed
         )
-
-    @commands.command(name = 'historico', aliases = ['histórico'])
-    async def historico(self, ctx: commands.Context, *args):
-        if len(args) == 0:
-            return await ctx.send(f'Você precisa informar o nome de quem você quer saber o histórico! {ctx.author.mention}')
-        
-        db = Database()
-        nome = ' '.join(args)
-        historico = db.buscar_historico_nomes(nome)
-        db.fechar()
-
-        if historico:
-            embed = discord.Embed(
-                title = f"Histórico de nomes de {nome}:",
-                color = discord.Color.blue()
-            )
-            for nick, data in historico: 
-                data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
-                embed.add_field(
-                    name = nick, 
-                    value = f'Alterado em **{data_formatada}**',
-                    inline = False
-                )
-            await ctx.send(embed = embed)
-        else:
-            await ctx.send(f'Não há histórico para "{nome}"! {ctx.author.mention}')
 
     @commands.command()
     async def limpar(self, ctx, quantia: int, *user):    
