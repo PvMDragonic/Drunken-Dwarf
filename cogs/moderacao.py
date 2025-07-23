@@ -24,8 +24,8 @@ class Moderacao(commands.Cog):
         )
 
         embed.add_field(
-            name = '!historico [pessoa]', 
-            value = 'Lista o histórico de nomes conhecidos de [pessoa].\n᲼᲼', 
+            name = '!historico [pessoa/dias]', 
+            value = 'Lista o histórico de nomes conhecidos de [pessoa].\nSe passar um número, irá mostrar tudo o que aconteceu dentro desses tantos dias.\n᲼᲼', 
             inline = False
         )
 
@@ -55,7 +55,7 @@ class Moderacao(commands.Cog):
 
         embed.add_field(
             name = '!teste [opção]', 
-            value = 'Testa a mensagem de boas-vindas.\nOpção 1 para boas-vindas; 2 para despedida.᲼᲼', 
+            value = 'Testa a mensagem de boas-vindas.\nOpção 1 para boas-vindas; 2 para despedida.\n᲼᲼', 
             inline = False
         )
 
