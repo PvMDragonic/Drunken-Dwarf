@@ -256,8 +256,8 @@ class Database():
             print(f'Erro no banco ao buscar histórico de nomes: {e}')
             return None
 
-    def historico_geral_mes(self, dias: int) -> dict | None:
-        """Retorna o histórico de membros do último mês (30 dias)."""
+    def historico_geral(self, dias: int) -> dict | None:
+        """Retorna o histórico de membros do últimos tantos dias."""
 
         try:
             data_limite = (datetime.now() - timedelta(days = int(dias))).date()
@@ -335,21 +335,17 @@ class Database():
             historico = defaultdict(list)
 
             for linha in query_mostro:
-                id_user, username, previous_username, xp, change_type, change_date = linha
-                historico[id_user].append({
-                    "tipo": change_type,
-                    "data": change_date,
-                    "nome": username,
-                    "nome_antigo": previous_username,
-                    "xp": xp
-                })
+                id_user, nome, nome_anterior, xp, tipo, data = linha
+                historico[id_user].append([
+                    nome, nome_anterior, xp, tipo, data
+                ])
 
             for changes in historico.values():
                 # Ordena o que cada um fez pela data, vide 
                 # a prioridade abaixo para datas iguais.
-                changes.sort(key = lambda c: (
-                    datetime.strptime(c["data"], "%Y-%m-%d"),
-                    { "entrou": 0, "nome": 1, "saiu": 2 }.get(c["tipo"], 99)
+                changes.sort(key = lambda item: (
+                    datetime.strptime(item[4], "%Y-%m-%d"),
+                    { "entrou": 0, "nome": 1, "saiu": 2 }.get(item[3], 99)
                 ))
 
             return dict(
@@ -357,11 +353,12 @@ class Database():
                 # do primeiro evento de cada pessoa.
                 sorted(
                     historico.items(),
-                    key = lambda item: datetime.strptime(item[1][0]["data"], "%Y-%m-%d")
+                    # dict_items([(id, [[nome, nome_anterior, xp, tipo, data]]), ...])
+                    key = lambda item: item[1][0][4]
                 )
             )
         except Exception as e:
-            print(f'Erro no banco ao buscar histórico do último mês: {e}')
+            print(f'Erro no banco ao buscar histórico geral: {e}')
             return None
 
     def adicionar_xp(self, id_user: int, id_rank: int, xp: int, kc: int, today: str):

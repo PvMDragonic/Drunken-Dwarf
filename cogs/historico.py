@@ -1,4 +1,3 @@
-from table2ascii import table2ascii as t2a, PresetStyle, Alignment
 from datetime import datetime
 from discord.ext import commands
 from discord.ui import View
@@ -6,6 +5,20 @@ import discord
 
 from dados.database import Database
 from dados.utils import formatar_xp
+
+def formatar_mudancas(mudancas: list[str]) -> str:
+    texto_embed = []
+    for nick, nick_anterior, xp, tipo, data in mudancas: 
+        data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
+        if tipo == 'nome':
+            if nick_anterior == None:
+                continue
+            texto_embed.append(f"`{nick_anterior}` → `{nick}` ({data_formatada})")
+        elif tipo == 'entrou':
+            texto_embed.append(f"`Entrou no clã` ({data_formatada})")
+        elif tipo == 'saiu':
+            texto_embed.append(f"`Saiu do clã ({formatar_xp(xp)} XP)` ({data_formatada})")
+    return '\n'.join(texto_embed)
 
 class HistoricoPaginator(View):
     def __init__(self, historico, titulo):
@@ -26,20 +39,9 @@ class HistoricoPaginator(View):
         fim = comeco + self.pag_quantia
         
         for _, mudancas in list(self.historico.items())[comeco:fim]:
-            value = []
-            for mudanca in mudancas:
-                data_formatada = datetime.strptime(mudanca['data'], "%Y-%m-%d").strftime("%d/%m/%Y")
-                if mudanca['tipo'] == 'nome':
-                    if mudanca['nome_antigo'] == None:
-                        continue
-                    value.append(f"`{mudanca['nome_antigo']}` → `{mudanca['nome']}` ({data_formatada})")
-                elif mudanca['tipo'] == 'entrou':
-                    value.append(f"`Entrou no clã` ({data_formatada})")
-                elif mudanca['tipo'] == 'saiu':
-                    value.append(f"`Saiu do clã ({formatar_xp(mudanca['xp'])} XP)` ({data_formatada})")
             embed.add_field(
-                name = mudancas[0]['nome_antigo'] or mudancas[0]['nome'], 
-                value = '\n'.join(value),
+                name = mudancas[0][1] or mudancas[0][0], # Nome antigo ou nome atual.
+                value = formatar_mudancas(mudancas),
                 inline = False
             )
 
@@ -78,26 +80,15 @@ class Historico(commands.Cog):
                 color = discord.Color.blue()
             )
 
-            historico = db.historico_geral_mes(dias)
+            historico = db.historico_geral(dias)
             if not historico:
                 return await ctx.send(f'Algo deu errado! Tente novamente mais tarde. {ctx.author.mention}')
 
             if len(historico) <= 10:
                 for _, mudancas in historico.items():
-                    value = []
-                    for mudanca in mudancas:
-                        data_formatada = datetime.strptime(mudanca['data'], "%Y-%m-%d").strftime("%d/%m/%Y")
-                        if mudanca['tipo'] == 'nome':
-                            if mudanca['nome_antigo'] == None:
-                                continue
-                            value.append(f"`{mudanca['nome_antigo']}` → `{mudanca['nome']}` ({data_formatada})")
-                        elif mudanca['tipo'] == 'entrou':
-                            value.append(f"`Entrou no clã` ({data_formatada})")
-                        elif mudanca['tipo'] == 'saiu':
-                            value.append(f"`Saiu do clã ({formatar_xp(mudanca['xp'])} XP)` ({data_formatada})")
                     embed.add_field(
-                        name = mudancas[0]['nome_antigo'] or mudancas[0]['nome'], 
-                        value = '\n'.join(value),
+                        name = mudancas[0][1] or mudancas[0][0], # Nome antigo ou nome atual.
+                        value = formatar_mudancas(mudancas),
                         inline = False
                     )
                 return await ctx.send(embed = embed)
