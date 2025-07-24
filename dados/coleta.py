@@ -213,24 +213,19 @@ class Coleta():
                 color = Color.blue()
             )
 
+            todos_relatorios = []
+
             for cabecinha in entradas:
-                embed.add_field(
-                    name = cabecinha,
-                    value = f'Entrou no clã.', 
-                    inline = False
-                )
+                todos_relatorios.append((cabecinha, 'Entrou no clã.'))
+
             for xp, cabecinha in saidas:
-                embed.add_field(
-                    name = cabecinha,
-                    value = f'Saiu do clã com {formatar_xp(xp)} de XP.', 
-                    inline = False
-                )
+                todos_relatorios.append((cabecinha, f'Saiu do clã com {formatar_xp(xp)} de XP.'))
+
             for nome_antigo, nome_novo in novos_nomes:
-                embed.add_field(
-                    name = nome_antigo, 
-                    value = f'Trocou de nome para `{nome_novo}`.', 
-                    inline = False
-                )
+                todos_relatorios.append((nome_antigo, f'Trocou de nome para `{nome_novo}`.'))
+
+            for name, value in todos_relatorios[:25]:
+                embed.add_field(name = name, value = value, inline = False)
 
             await canal.send(embed = embed)
 
