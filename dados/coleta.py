@@ -22,13 +22,20 @@ class Coleta():
         return diferenca.total_seconds()
     
     @staticmethod
-    async def _coletar_cabecinhas():
+    async def _coletar_cabecinhas() -> list:
+        """
+        Coleta e armazena os membros do clã e retorna\n
+        aqueles que apareceram desde a última vez.
+        """
+
         cabecinhas = await Coleta()._listar_membros_cla(completo = True)
         if cabecinhas is None:
             return 
         
-        hoje = datetime.today().strftime('%Y-%m-%d')
         db = Database()
+        hoje = datetime.today().strftime('%Y-%m-%d')
+        cabecinhas_registradas = db.todos_jogadores(incluir_inativos = True)
+        entradas = []
 
         RANKS = {
             'Owner': 1,
@@ -52,6 +59,9 @@ class Coleta():
             kills = cringe[' Kills']
             id = (db.jogador_registrado(nome) or db.registrar_jogador(nome, hoje))[0]
 
+            if not any(nome in entrada for entrada in cabecinhas_registradas):
+                entradas.append(nome)
+
             ultimo_registro = db.buscar_ultimo_xp(id)
             if not ultimo_registro:
                 db.adicionar_xp(id, rank, xp_atual, kills, hoje)
@@ -65,7 +75,9 @@ class Coleta():
 
             if xp_atual > ultimo_xp:
                 db.adicionar_xp(id, rank, xp_atual, kills, hoje)
+
         db.fechar()
+        return entradas
             
     @staticmethod
     async def _listar_membros_cla(completo: bool = False) -> None | list[str] | pd.DataFrame:
@@ -111,11 +123,10 @@ class Coleta():
         db.fechar()
 
     @staticmethod
-    async def _verificar_alterados(enviar_relatorio: bool, canal: TextChannel):
+    async def _verificar_alterados() -> list:
         """
-        Verifica e trata nomes registrados que não estão mais no clã.
-            - Quem saiu (não tem `NO_PROFILE` no RuneMetrics)  é eliminado;
-            - Quem trocou de nome tem o perfil unido ao seu par mais similar.
+        Verifica e trata nomes registrados que não estão mais no clã\n
+        e retorna uma lista com quem saiu e outra com quem trocou de nome.
         """
 
         db = Database()
@@ -142,7 +153,7 @@ class Coleta():
                     runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
                     if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
                         db.arquivar_jogador(id, hoje)
-                        saidas.append((id, nome))
+                        saidas.append((db.buscar_xp(id), nome))
                         print(f"Jogador ({id} '{nome}') saiu do clã.")
                         continue
 
@@ -167,7 +178,7 @@ class Coleta():
                 if score < 0.95: 
                     if jogador_ativo:
                         db.arquivar_jogador(id, hoje)
-                        saidas.append((id, nome))
+                        saidas.append((db.buscar_xp(id), nome))
                         print(f"Jogador ({id} '{nome}') saiu do clã.")
                     continue
 
@@ -175,35 +186,53 @@ class Coleta():
                 sim = f'{(score * 100):.2f}%'
 
                 db.unir_registros(id, novo_id, jogador_ativo)
-                novos_nomes.append((nome, novo_nome, sim))
+                novos_nomes.append((nome, novo_nome))
                 print(f"({id} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
             except Exception as e:
                 print(f'Erro atualizando {nome} para novo nome: {e}')
 
+        db.fechar()
+        return [saidas, novos_nomes]
+
+    @staticmethod
+    async def _enviar_relatorio(enviar_relatorio: bool, canal: TextChannel, relatorios: list):
         if not enviar_relatorio:
             return
+    
+        entradas, saidas, novos_nomes = relatorios
+
+        entradas = [
+            nome for nome in entradas if 
+            not any(nome in entrada for entrada in saidas) and
+            not any(nome in entrada for entrada in novos_nomes)
+        ]
         
-        if saidas or novos_nomes:
+        if entradas or saidas or novos_nomes:
             embed = Embed(
-                title = f"Relatório de saídas & nomes",
+                title = f"Relatório de entradas, saídas & nomes",
                 color = Color.blue()
             )
 
-            for id, cabecinha in saidas:
+            for cabecinha in entradas:
                 embed.add_field(
                     name = cabecinha,
-                    value = f'Saiu do clã com {formatar_xp(db.buscar_xp(id))} de XP.', 
+                    value = f'Entrou no clã.', 
                     inline = False
                 )
-            for nome_antigo, nome_novo, sim in novos_nomes:
+            for xp, cabecinha in saidas:
+                embed.add_field(
+                    name = cabecinha,
+                    value = f'Saiu do clã com {formatar_xp(xp)} de XP.', 
+                    inline = False
+                )
+            for nome_antigo, nome_novo in novos_nomes:
                 embed.add_field(
                     name = nome_antigo, 
                     value = f'Trocou de nome para `{nome_novo}`.', 
                     inline = False
                 )
-            await canal.send(embed = embed)
 
-        db.fechar()
+            await canal.send(embed = embed)
 
     @staticmethod
     async def iniciar(bot):
@@ -220,13 +249,19 @@ class Coleta():
                 await sleep(segundos)
                 
             print('Coletando cabecinhas...')
-            await Coleta()._coletar_cabecinhas()
+            entradas = await Coleta()._coletar_cabecinhas()
 
             print('Atualizando stats...')
             await Coleta()._atualizar_stats()
  
             print('Verificando nomes alterados...')
-            await Coleta()._verificar_alterados(bot.dkdw.enviar_relatorio, moderacao)
+            saidas, novos_nomes = await Coleta()._verificar_alterados()
+
+            await Coleta()._enviar_relatorio(
+                bot.dkdw.enviar_relatorio, 
+                moderacao,
+                [entradas, saidas, novos_nomes]
+            )
                 
             HORAS = 3
             print(f'Dormindo por {HORAS} horas.')
