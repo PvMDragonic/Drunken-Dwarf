@@ -5,6 +5,7 @@ from discord.ui import View
 import discord
 
 from dados.database import Database
+from dados.utils import formatar_xp
 
 class HistoricoPaginator(View):
     def __init__(self, historico, titulo):
@@ -35,7 +36,7 @@ class HistoricoPaginator(View):
                 elif mudanca['tipo'] == 'entrou':
                     value.append(f"`Entrou no clã` ({data_formatada})")
                 elif mudanca['tipo'] == 'saiu':
-                    value.append(f"`Saiu do clã` ({data_formatada})")
+                    value.append(f"`Saiu do clã ({formatar_xp(mudanca['xp'])} XP)` ({data_formatada})")
             embed.add_field(
                 name = mudancas[0]['nome_antigo'] or mudancas[0]['nome'], 
                 value = '\n'.join(value),
@@ -93,7 +94,7 @@ class Historico(commands.Cog):
                         elif mudanca['tipo'] == 'entrou':
                             value.append(f"`Entrou no clã` ({data_formatada})")
                         elif mudanca['tipo'] == 'saiu':
-                            value.append(f"`Saiu do clã` ({data_formatada})")
+                            value.append(f"`Saiu do clã ({formatar_xp(mudanca['xp'])} XP)` ({data_formatada})")
                     embed.add_field(
                         name = mudancas[0]['nome_antigo'] or mudancas[0]['nome'], 
                         value = '\n'.join(value),
@@ -110,7 +111,7 @@ class Historico(commands.Cog):
 
             if historico:
                 description = []
-                for nick, nick_anterior, tipo, data in historico: 
+                for nick, nick_anterior, xp, tipo, data in historico: 
                     data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
                     if tipo == 'nome':
                         if nick_anterior == None:
@@ -119,7 +120,7 @@ class Historico(commands.Cog):
                     elif tipo == 'entrou':
                         description.append(f"`Entrou no clã` ({data_formatada})")
                     elif tipo == 'saiu':
-                        description.append(f"`Saiu do clã` ({data_formatada})")
+                        description.append(f"`Saiu do clã ({formatar_xp(xp)} XP)` ({data_formatada})")
                     
                 await ctx.send(embed = discord.Embed(
                     title = f"Histórico de __{nome}__:",

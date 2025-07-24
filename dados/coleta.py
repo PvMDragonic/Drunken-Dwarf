@@ -11,6 +11,7 @@ import re
 
 from dados.database import Database
 from dados.fetch import Fetch
+from dados.utils import formatar_xp
 
 class Coleta():
     @staticmethod
@@ -141,7 +142,7 @@ class Coleta():
                     runemetrics = await Fetch().json(f"https://apps.runescape.com/runemetrics/profile/profile?user={nome.replace(' ', '+')}&activities=1")
                     if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
                         db.arquivar_jogador(id, hoje)
-                        saidas.append(nome)
+                        saidas.append((id, nome))
                         print(f"Jogador ({id} '{nome}') saiu do clã.")
                         continue
 
@@ -166,7 +167,7 @@ class Coleta():
                 if score < 0.95: 
                     if jogador_ativo:
                         db.arquivar_jogador(id, hoje)
-                        saidas.append(nome)
+                        saidas.append((id, nome))
                         print(f"Jogador ({id} '{nome}') saiu do clã.")
                     continue
 
@@ -178,7 +179,6 @@ class Coleta():
                 print(f"({id} '{nome}') trocou para ({novo_id} '{novo_nome}') com similaridade: {sim}")
             except Exception as e:
                 print(f'Erro atualizando {nome} para novo nome: {e}')
-        db.fechar()
 
         if not enviar_relatorio:
             return
@@ -189,10 +189,10 @@ class Coleta():
                 color = Color.blue()
             )
 
-            for cabecinha in saidas:
+            for id, cabecinha in saidas:
                 embed.add_field(
                     name = cabecinha,
-                    value = 'Saiu do clã.', 
+                    value = f'Saiu do clã com {formatar_xp(db.buscar_xp(id))} de XP.', 
                     inline = False
                 )
             for nome_antigo, nome_novo, sim in novos_nomes:
@@ -201,8 +201,9 @@ class Coleta():
                     value = f'Trocou de nome para `{nome_novo}`.', 
                     inline = False
                 )
-
             await canal.send(embed = embed)
+
+        db.fechar()
 
     @staticmethod
     async def iniciar(bot):

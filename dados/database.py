@@ -176,6 +176,22 @@ class Database():
             print(f'Erro no banco ao buscar todas as estatísticas: {e}')
             return None
         
+    def buscar_xp(self, id: int) -> int | None:
+        """Retorna o registro de XP feito no clã mais recente para dado jogador."""
+
+        try:
+            self.cursor.execute("""
+                SELECT xp
+                FROM users_data
+                WHERE id_user = ?
+                ORDER BY xp DESC
+                LIMIT 1
+            """, (id, ))
+            return self.cursor.fetchone()[0]
+        except Exception as e:
+            print(f'Erro no banco ao buscar último XP de jogador: {e}')
+            return None
+
     def buscar_historico_jogador(self, name: str) -> tuple[str, str] | None:
         """Retorna o todos os registros de dado jogador."""
 
@@ -183,6 +199,7 @@ class Database():
             id = (self.jogador_registrado(name, True))[0]
             self.cursor.execute("""
                 SELECT
+                    NULL,
                     NULL,
                     NULL,
                     'entrou',
@@ -195,6 +212,13 @@ class Database():
                 SELECT
                     NULL,
                     NULL,
+                    (
+                        SELECT ud.xp
+                        FROM users_data ud
+                        WHERE ud.id_user = ul.id_user
+                        ORDER BY ud.xp DESC
+                        LIMIT 1
+                    ),
                     'saiu',
                     ul.leave_date
                 FROM users_leave ul
@@ -212,6 +236,7 @@ class Database():
                         ORDER BY un_prev.id DESC
                         LIMIT 1
                     ),
+                    NULL,
                     'nome',
                     un.name_date
                 FROM users_names un
@@ -223,8 +248,8 @@ class Database():
             return sorted(
                 historico,
                 key = lambda item: (
-                    item[3], 
-                    { "entrou": 0, "nome": 1, "saiu": 2 }.get(item[2], 99)
+                    item[4], 
+                    { "entrou": 0, "nome": 1, "saiu": 2 }.get(item[3], 99)
                 )
             )            
         except Exception as e:
@@ -250,6 +275,7 @@ class Database():
                         LIMIT 1
                     ) AS username,
                     NULL AS previous_username,
+                    NULL AS xp,
                     'entrou' AS change_type,
                     uj.join_date AS change_date
                 FROM users_join uj
@@ -269,6 +295,13 @@ class Database():
                         LIMIT 1
                     ) AS username,
                     NULL AS previous_username,
+                    (
+                        SELECT ud.xp
+                        FROM users_data ud
+                        WHERE ud.id_user = ul.id_user
+                        ORDER BY ud.xp DESC
+                        LIMIT 1
+                    ) AS xp,
                     'saiu' AS change_type,
                     ul.leave_date AS change_date
                 FROM users_leave ul
@@ -288,6 +321,7 @@ class Database():
                         ORDER BY un_prev.id DESC
                         LIMIT 1
                     ) AS previous_username,
+                    NULL AS xp,
                     'nome' AS change_type,
                     un.name_date AS change_date
                 FROM users_names un
@@ -301,12 +335,13 @@ class Database():
             historico = defaultdict(list)
 
             for linha in query_mostro:
-                id_user, username, previous_username, change_type, change_date = linha
+                id_user, username, previous_username, xp, change_type, change_date = linha
                 historico[id_user].append({
                     "tipo": change_type,
                     "data": change_date,
                     "nome": username,
-                    "nome_antigo": previous_username
+                    "nome_antigo": previous_username,
+                    "xp": xp
                 })
 
             for changes in historico.values():

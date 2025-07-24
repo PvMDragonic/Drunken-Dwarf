@@ -5,6 +5,7 @@ from discord.ui import View
 import discord
 
 from dados.database import Database
+from dados.utils import formatar_xp
 
 class InativosPaginator(View):
     ORDEM_RANKS = {
@@ -40,32 +41,6 @@ class InativosPaginator(View):
             ("Ordem: XP", lambda inativo: (inativo[2], inativo[3])),
             ("Ordem: Tempo", lambda inativo: (inativo[3], inativo[2])),
         )
-
-    @staticmethod
-    def formatar_xp(xp: int):
-        if xp == 0:
-            return "Zero"
-        
-        virgulas = f'{xp:,}'
-        separado = virgulas.split(',')
-
-        # 1 vírgula (100,000)
-        if len(separado) == 2: 
-            ultimo_digito = separado[1][0]
-            if ultimo_digito != '0':
-                return f'{separado[0]}.{ultimo_digito}K'
-            return f'{separado[0]}K'
-        
-        # 2 vírgulas (100,000,000)
-        if len(separado) == 3: 
-            ultimo_digito = separado[1][0]
-            if ultimo_digito != '0':
-                return f'{separado[0]}.{ultimo_digito}M'
-            return f'{separado[0]}M'
-        
-        # 3 vírgulas (100,000,000,000)
-        if len(separado) == 4: 
-            return f'{separado[0]}.{separado[1]}B'
         
     @staticmethod
     def formatar_dia(dias: int):
@@ -78,7 +53,7 @@ class InativosPaginator(View):
         pagina = [(
             nome, 
             rank, 
-            InativosPaginator.formatar_xp(xp), 
+            formatar_xp(xp), 
             InativosPaginator.formatar_dia(inativo)
         ) for nome, rank, xp, inativo in self.inativos[comeco:fim]]
 
