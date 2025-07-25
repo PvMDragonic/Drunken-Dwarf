@@ -1,4 +1,4 @@
-def formatar_xp(xp: int):
+def formatar_xp(xp: int) -> str:
     """
     Formata um número para ficar truncado igual no RuneScape,\n
     trucando as casas de milhares, milhão e bilhão em troca\n
@@ -28,3 +28,9 @@ def formatar_xp(xp: int):
     # 3 vírgulas (100,000,000,000)
     if len(separado) == 4: 
         return f'{separado[0]}.{separado[1]}B'
+    
+def formatar_dia(dias: int) -> str:
+    """Adiciona 'dia' à um número, levando em conta singular ou plural."""
+
+    unidade = "dia" if dias == 1 else "dias"
+    return f"{dias} {unidade}"

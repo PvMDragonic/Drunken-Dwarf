@@ -1,5 +1,5 @@
 from table2ascii import table2ascii as t2a, PresetStyle, Alignment
-from datetime import datetime
+from datetime import datetime, date
 from discord.ext import commands
 from discord.ui import View
 import discord
@@ -7,7 +7,7 @@ import discord
 from dados.database import Database
 from dados.utils import formatar_xp, formatar_dia
 
-class InativosPaginator(View):
+class GratuitosPaginator(View):
     ORDEM_RANKS = {
         'Dono': 0,
         'Vice-Dono': 1,
@@ -23,38 +23,37 @@ class InativosPaginator(View):
         'Recruta': 11
     }
 
-    def __init__(self, inativos, filtro_tempo):
+    def __init__(self, gratuitos):
         super().__init__(timeout = None)
-        self.filtro = filtro_tempo
-        self.inativos = inativos
+        self.gratuitos = gratuitos
         self.pag_atual = 0
         self.pag_quantia = 10
-        self.pag_total = (len(inativos) - 1) // 10 + 1
+        self.pag_total = (len(gratuitos) - 1) // 10 + 1
 
-        self.modo_ordenar = 3 # Padrão é ordem por tempo de inatividade.
+        self.modo_ordenar = 2 # Padrão é ordem por XP.
         self.crescente = True
         
         # Ordena por XP como fallback caso tenha dois valores iguais.
         self.modos_ordenar = (
             ("Ordem: Nome", lambda inativo: (inativo[0], inativo[2])),   
-            ("Ordem: Rank", lambda inativo: (self.ORDEM_RANKS.get(inativo[1], 999), inativo[2])),  
-            ("Ordem: XP", lambda inativo: (inativo[2], inativo[3])),
-            ("Ordem: Tempo", lambda inativo: (inativo[3], inativo[2])),
+            ("Ordem: Rank", lambda inativo: (self.ORDEM_RANKS.get(inativo[2], 999), inativo[1])),  
+            ("Ordem: XP", lambda inativo: (inativo[1], inativo[2])),
         )
 
     def carregar_tabela(self):
         comeco = self.pag_atual * self.pag_quantia
         fim = comeco + self.pag_quantia
-        pagina = [(
+
+        gratuitos = [(
             nome, 
+            formatar_xp(xp),
             rank, 
-            formatar_xp(xp), 
-            formatar_dia(inativo)
-        ) for nome, rank, xp, inativo in self.inativos[comeco:fim]]
+            formatar_dia(data)
+        ) for nome, xp, data, rank in self.gratuitos[comeco:fim]]
 
         tabela = t2a(
-            header = ["Nome", "Rank", "XP", "Inativo"],
-            body = pagina,
+            header = ["Nome", "XP", "Rank", "Inativo"],
+            body = gratuitos,
             style = PresetStyle.ascii_box,
             alignments = Alignment.LEFT,
         )
@@ -62,7 +61,7 @@ class InativosPaginator(View):
 
     def criar_embed(self):
         return discord.Embed(
-            title = f"Jogadores inativos há pelo menos {self.filtro} ({self.pag_atual + 1}/{self.pag_total})",
+            title = f"Jogadores gratuitos ({self.pag_atual + 1}/{self.pag_total})",
             description = self.carregar_tabela(),
             color = discord.Color.blue()
         )
@@ -80,14 +79,14 @@ class InativosPaginator(View):
         self.pag_atual = (self.pag_atual + 1) % self.pag_total
         await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
-    @discord.ui.button(label = "Ordem: Tempo", style = discord.ButtonStyle.secondary)
+    @discord.ui.button(label = "Ordem: XP", style = discord.ButtonStyle.secondary)
     async def ordenar(self, interacao: discord.Interaction, botao: discord.ui.Button):
         self.modo_ordenar = (self.modo_ordenar + 1) % len(self.modos_ordenar)
         botao.label = self.modos_ordenar[self.modo_ordenar][0]
 
-        self.inativos.sort(
+        self.gratuitos.sort(
             key = self.modos_ordenar[self.modo_ordenar][1], 
-            reverse = self.crescente
+            reverse = not self.crescente
         )
 
         await interacao.response.edit_message(embed = self.criar_embed(), view = self)
@@ -97,61 +96,33 @@ class InativosPaginator(View):
         self.crescente = not self.crescente
         botao.label = 'Crescente' if self.crescente else 'Decrescente'
 
-        self.inativos.sort(
+        self.gratuitos.sort(
             key = self.modos_ordenar[self.modo_ordenar][1], 
-            reverse = self.crescente
+            reverse = not self.crescente
         )
         
         await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
-class Inativos(commands.Cog):
+class Gratuitos(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
-    async def inativos(self, ctx, *args):
-        hoje = datetime.now().date()
+    async def gratuitos(self, ctx):
         db = Database()
-        membros = db.todos_jogadores()
-
-        try:
-            filtro_tempo = int(args[0])
-        except (ValueError, IndexError):
-            filtro_tempo = 1
-
-        EXCLUIDOS = (
-            'Org.', 'Coord.', 'Fiscal', 'Vice-Dono', 'Dono'
-        )
-
-        inativos = []
-        for id, nome in membros:
-            xp, xp_data, rank = db.buscar_ultimo_xp(id)
-            xp_data = datetime.strptime(xp_data, '%Y-%m-%d').date()
-            tempo_inativo = (hoje - xp_data).days 
-
-            # 1 dia inativo pode ser porque rodou antes da coleta diária.
-            if tempo_inativo >= filtro_tempo and rank not in EXCLUIDOS: 
-                inativos.append((nome, rank, xp, tempo_inativo))
-                
+        gratuitos = db.buscar_gratuitos()
         db.fechar()
 
-        filtro_tempo = f"{filtro_tempo} dia{'s' if filtro_tempo != 1 else ''}"
-
-        if len(inativos) >= 1:
-            # Por padrão ordena pelo tempo de inatividade decrescente e depois por XP.
-            inativos.sort(
-                key = lambda inativo: (inativo[3], inativo[2]), 
-                reverse = True
-            )
-
-            paginator = InativosPaginator(inativos, filtro_tempo)
+        if len(gratuitos) >= 1:
+            gratuitos.sort(key = lambda inativo: inativo[1], reverse = True)
+            paginator = GratuitosPaginator(gratuitos)
             await paginator.msg_inicial(ctx)
         else:
             await ctx.send(embed = discord.Embed(
-                title = f"Jogadores inativos há pelo menos {filtro_tempo} ",
-                description = 'Nenhum inativo dentro do período especificado!',
+                title = f"Jogadores gratuitos",
+                description = 'Nenhum jogador gratuito no clã!',
                 color = discord.Color.blue()
             ))
 
 async def setup(bot):
-    await bot.add_cog(Inativos(bot))
+    await bot.add_cog(Gratuitos(bot))

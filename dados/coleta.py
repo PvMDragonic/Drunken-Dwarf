@@ -124,8 +124,11 @@ class Coleta():
                     # Acc saiu dos Hiscores porque tá free, mas não 
                     # importa porque free não pode mudar de nome. 
                     if stats is None:
+                        db.atualizar_gratuito(True, nome) # Marca como gratuito.
                         continue
                     
+                    db.atualizar_gratuito(False, nome) # Marca como membro.
+
                     stats_formatados = re.split(r'[,\n]+', stats)[0:-1]
 
                     usuario = db.jogador_registrado(nome)

@@ -208,6 +208,43 @@ class Database():
         except Exception as e:
             print(f'Erro no banco ao buscar todos os nomes de alguém: {e}')
             return None
+        
+    def buscar_gratuitos(self) -> tuple | None:
+        """Retorna todos os jogadores gratuitos com [(nome, xp, rank, tempo_inativo), ...]."""
+
+        try:
+            self.cursor.execute("""
+                SELECT
+                    un.username,
+                    ud.xp,
+                    CAST(julianday('now') - julianday(ud.xp_date) AS INTEGER) AS days_since_xp,
+                    r.rank
+                FROM users u
+                JOIN (
+                    SELECT id_user, username
+                    FROM users_names
+                    WHERE (id_user, name_date) IN (
+                        SELECT id_user, MAX(name_date)
+                        FROM users_names
+                        GROUP BY id_user
+                    )
+                ) un ON u.id = un.id_user
+                JOIN (
+                    SELECT id_user, xp, xp_date, id_rank
+                    FROM users_data
+                    WHERE (id_user, xp_date) IN (
+                        SELECT id_user, MAX(xp_date)
+                        FROM users_data
+                        GROUP BY id_user
+                    )
+                ) ud ON u.id = ud.id_user
+                JOIN ranks r ON ud.id_rank = r.id
+                WHERE u.is_free = 1;
+            """)
+            return self.cursor.fetchall()
+        except Exception as e:
+            print(f'Erro no banco ao buscar todos os inativos: {e}')
+            return None
 
     def buscar_historico_jogador(self, name: str) -> tuple[str, str] | None:
         """Retorna o todos os registros de dado jogador."""
@@ -425,6 +462,25 @@ class Database():
             )
         except Exception as e:
             print(f'Erro no banco ao adicionar novo nome à {nome}: {e}')
+            return None
+
+    def atualizar_gratuito(self, status: bool, nome: str):
+        """Atualiza o status de algum usuário para gratuito (True; 1) ou membro (False; 0)."""
+
+        try:
+            self.cursor.execute("""
+                UPDATE users
+                SET is_free = ?
+                WHERE id = (
+                    SELECT id_user
+                    FROM users_names
+                    WHERE username = ?
+                    ORDER BY name_date DESC
+                    LIMIT 1
+                )
+            """, (status, nome))
+        except Exception as e:
+            print(f'Erro no banco ao atualizar o status de gratuito: {e}')
             return None
 
     def unir_registros(self, id_old: int, id_new: int, jogador_ativo: bool):
