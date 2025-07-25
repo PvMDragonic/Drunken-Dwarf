@@ -87,7 +87,7 @@ class InativosPaginator(View):
 
         self.inativos.sort(
             key = self.modos_ordenar[self.modo_ordenar][1], 
-            reverse = self.crescente
+            reverse = not self.crescente
         )
 
         await interacao.response.edit_message(embed = self.criar_embed(), view = self)
@@ -99,7 +99,7 @@ class InativosPaginator(View):
 
         self.inativos.sort(
             key = self.modos_ordenar[self.modo_ordenar][1], 
-            reverse = self.crescente
+            reverse = not self.crescente
         )
         
         await interacao.response.edit_message(embed = self.criar_embed(), view = self)
