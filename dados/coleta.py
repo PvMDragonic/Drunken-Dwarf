@@ -36,6 +36,7 @@ class Coleta():
         hoje = datetime.today().strftime('%Y-%m-%d')
         cabecinhas_registradas = db.todos_jogadores(incluir_inativos = True)
         entradas = []
+        novos_nomes = []
 
         RANKS = {
             'Owner': 1,
@@ -59,8 +60,20 @@ class Coleta():
             kills = cringe[' Kills']
             id = (db.jogador_registrado(nome) or db.registrar_jogador(nome, hoje))[0]
 
+            # Nome novo que não estava registrado até então.
             if not any(nome in entrada for entrada in cabecinhas_registradas):
-                entradas.append(nome)
+                nomes_passados = db.buscar_todos_nomes(id)
+
+                # Se for alguém completamente novo, sempre vai ter só 1 nome;
+                # se tem mais de um é porque a pessoa voltou pra um passado.
+                if len(nomes_passados) > 1:
+                    nome_recente = nomes_passados[-1]
+                    db.adicionar_nome(id, nome, hoje)
+                    novos_nomes.append((nome_recente, nome))
+                    print(f"({id} '{nome_recente}') voltou para o nome '{nome}'.")
+                else:
+                    entradas.append(nome)
+                    print(f"({id} '{nome_recente}') entrou para o clã.")
 
             ultimo_registro = db.buscar_ultimo_xp(id)
             if not ultimo_registro:
@@ -77,7 +90,7 @@ class Coleta():
                 db.adicionar_xp(id, rank, xp_atual, kills, hoje)
 
         db.fechar()
-        return entradas
+        return entradas, novos_nomes
             
     @staticmethod
     async def _listar_membros_cla(completo: bool = False) -> None | list[str] | pd.DataFrame:
@@ -175,7 +188,7 @@ class Coleta():
                 best_match, score = max(similaridades, key = lambda x: x[1])
 
                 # Se sair do clã e mudar de nome logo em seguida, cai aqui.
-                if score < 0.95: 
+                if score < 0.95:
                     if jogador_ativo:
                         db.arquivar_jogador(id, hoje)
                         saidas.append((db.buscar_xp(id), nome))
@@ -244,18 +257,18 @@ class Coleta():
                 await sleep(segundos)
                 
             print('Coletando cabecinhas...')
-            entradas = await Coleta()._coletar_cabecinhas()
+            entradas, novos_nomes1 = await Coleta()._coletar_cabecinhas()
 
             print('Atualizando stats...')
             await Coleta()._atualizar_stats()
  
             print('Verificando nomes alterados...')
-            saidas, novos_nomes = await Coleta()._verificar_alterados()
+            saidas, novos_nomes2 = await Coleta()._verificar_alterados()
 
             await Coleta()._enviar_relatorio(
                 bot.dkdw.enviar_relatorio, 
                 moderacao,
-                [entradas, saidas, novos_nomes]
+                [entradas, saidas, novos_nomes1 + novos_nomes2]
             )
                 
             HORAS = 3

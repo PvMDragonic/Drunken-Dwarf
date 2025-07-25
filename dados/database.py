@@ -46,6 +46,8 @@ class Database():
             if not incluir_arqv:
                 query += " AND u.in_clan = 1"
 
+            query += " ORDER BY un.name_date DESC LIMIT 1"
+
             self.cursor.execute(query, (nome,))
             return self.cursor.fetchone()
         except Exception as e:
@@ -190,6 +192,21 @@ class Database():
             return self.cursor.fetchone()[0]
         except Exception as e:
             print(f'Erro no banco ao buscar último XP de jogador: {e}')
+            return None
+        
+    def buscar_todos_nomes(self, id: int) -> list[str] | None:
+        """Retorna todos os nomes que alguém já teve."""
+
+        try:
+            self.cursor.execute("""
+                SELECT username 
+                FROM users_names 
+                WHERE id_user = ?
+            """, (id, ))
+            nomes = self.cursor.fetchall()
+            return [item[0] for item in nomes] if nomes else None
+        except Exception as e:
+            print(f'Erro no banco ao buscar todos os nomes de alguém: {e}')
             return None
 
     def buscar_historico_jogador(self, name: str) -> tuple[str, str] | None:
@@ -397,6 +414,18 @@ class Database():
             self.conn.commit()
         except Exception as e:
             print(f'Erro no banco ao adicionar estatísticas: {e}')
+
+    def adicionar_nome(self, id: int, nome: str, hoje: str):
+        """Adiciona um novo registro de nome à alguém."""
+
+        try:
+            self.cursor.execute(
+                "INSERT INTO users_names (id_user, username, name_date) VALUES (?, ?, ?)", 
+                (id, nome, hoje)
+            )
+        except Exception as e:
+            print(f'Erro no banco ao adicionar novo nome à {nome}: {e}')
+            return None
 
     def unir_registros(self, id_old: int, id_new: int, jogador_ativo: bool):
         """Muda o 'id_user' do jogador com 'id_new' para 'id_old', unificando seus registros."""
