@@ -24,6 +24,12 @@ class Moderacao(commands.Cog):
         )
 
         embed.add_field(
+            name = '!gratuitos', 
+            value = 'Lista membros do clã que são de acesso gratuito.\n᲼᲼', 
+            inline = False
+        )
+
+        embed.add_field(
             name = '!historico [pessoa/dias]', 
             value = 'Lista o histórico de nomes conhecidos de [pessoa].\nSe passar um número, irá mostrar tudo o que aconteceu dentro desses tantos dias.\n᲼᲼', 
             inline = False
