@@ -63,11 +63,11 @@ class Coleta():
             # Nome novo que não estava registrado até então.
             if not any(nome in entrada for entrada in cabecinhas_registradas):
                 nomes_passados = db.buscar_todos_nomes(id)
+                nome_recente = nomes_passados[-1]
 
                 # Se for alguém completamente novo, sempre vai ter só 1 nome;
                 # se tem mais de um é porque a pessoa voltou pra um passado.
                 if len(nomes_passados) > 1:
-                    nome_recente = nomes_passados[-1]
                     db.adicionar_nome(id, nome, hoje)
                     novos_nomes.append((nome_recente, nome))
                     print(f"({id} '{nome_recente}') voltou para o nome '{nome}'.")
