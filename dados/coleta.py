@@ -151,7 +151,7 @@ class Coleta():
 
         if not cabecinhas_atuais:
             db.fechar()
-            return
+            return [], []
 
         # Registrados que não estão mais no clã.
         desaparecidos = [(id, nome) for id, nome in cabecinhas_registradas if nome not in cabecinhas_atuais]
