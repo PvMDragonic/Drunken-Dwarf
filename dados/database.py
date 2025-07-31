@@ -63,7 +63,8 @@ class Database():
 
             # Pessoa saiu e voltou depois, com o mesmo nome (não é tijolinho).
             if id:
-                self.cursor.execute("UPDATE users SET in_clan = 1 WHERE id = ?", (id[0], ))
+                id = id[0]
+                self.cursor.execute("UPDATE users SET in_clan = 1 WHERE id = ?", (id, ))
             # Randola (ou trocou de nome antes de voltar).
             else: 
                 self.cursor.execute("INSERT INTO users DEFAULT VALUES")
