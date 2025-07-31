@@ -145,6 +145,22 @@ class Coleta():
         e retorna uma lista com quem saiu e outra com quem trocou de nome.
         """
 
+        def limite_similaridade(nivel_total: int):
+            """
+            Retorna um valor entre 0.999 e 0.900 dependendo do nível total do jogador sendo comparado.\n
+
+            Contas de nível mais baixo tendem a ter um grau maior de similaridade,
+            enquanto contas mais desenvolvidas possuem mais distinções de uma para a outra.
+            """
+
+            val_minimo = 0.999  # 99,9% similar
+            val_maximo = 0.900  # 90,0% similar
+            nivel_total_limite = 3000.0 
+            exponente = 4 
+            x_normalizado = min(max(nivel_total, 0), nivel_total_limite) / nivel_total_limite
+            valor_curva = x_normalizado ** exponente
+            return val_minimo + (val_maximo - val_minimo) * valor_curva
+
         db = Database()
         cabecinhas_registradas = db.todos_jogadores(incluir_inativos = True)
         cabecinhas_atuais = await Coleta()._listar_membros_cla()
@@ -173,15 +189,15 @@ class Coleta():
                         print(f"Jogador ({id} '{nome}') saiu do clã.")
                         continue
 
-                stats_antigo = db.buscar_estatisticas(id)
+                stats_jogador = db.buscar_estatisticas(id)
 
                 scaler = StandardScaler()     
                 cabecinhas_stats = np.array(db.buscar_todas_estatísticas(id))
                 scaler.fit(cabecinhas_stats)
                 dados_historicos = scaler.transform(cabecinhas_stats)
 
-                stats_antigo = np.array(stats_antigo).reshape(1, -1)   # shape (1, 150)
-                ultimo_stats = scaler.transform(stats_antigo)[0]       # shape (150,)
+                stats_antigo = np.array(stats_jogador).reshape(1, -1)   # shape (1, 150)
+                ultimo_stats = scaler.transform(stats_antigo)[0]        # shape (150,)
 
                 similaridades = []
                 for id_conhecido, vetor_conhecido in zip(db.todos_jogadores_com_stats(id), dados_historicos):
@@ -191,7 +207,7 @@ class Coleta():
                 best_match, score = max(similaridades, key = lambda x: x[1])
 
                 # Se sair do clã e mudar de nome logo em seguida, cai aqui.
-                if score < 0.95:
+                if score < limite_similaridade(stats_jogador[1]):
                     if jogador_ativo:
                         db.arquivar_jogador(id, hoje)
                         saidas.append((db.buscar_xp(id), nome))
