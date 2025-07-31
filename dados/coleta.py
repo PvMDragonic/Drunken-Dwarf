@@ -154,9 +154,9 @@ class Coleta():
             """
 
             val_minimo = 0.999  # 99,9% similar
-            val_maximo = 0.900  # 90,0% similar
+            val_maximo = 0.950  # 95,0% similar
             nivel_total_limite = 3000.0 
-            exponente = 4 
+            exponente = 3.5 
             x_normalizado = min(max(nivel_total, 0), nivel_total_limite) / nivel_total_limite
             valor_curva = x_normalizado ** exponente
             return val_minimo + (val_maximo - val_minimo) * valor_curva
