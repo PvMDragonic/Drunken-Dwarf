@@ -168,7 +168,7 @@ class Database():
             print(f'Erro no banco ao buscar estatística de jogador: {e}')
             return None
         
-    def buscar_todas_estatísticas(self, excluding_id: int) -> tuple[tuple[int]] | None:
+    def buscar_todas_estatisticas(self, excluding_id: int) -> tuple[tuple[int]] | None:
         """Retorna as 150 estatísticas dos hi-scores de todos, menos de dado id."""
         
         try:

@@ -192,7 +192,7 @@ class Coleta():
                 stats_jogador = db.buscar_estatisticas(id)
 
                 scaler = StandardScaler()     
-                cabecinhas_stats = np.array(db.buscar_todas_estatísticas(id))
+                cabecinhas_stats = np.array(db.buscar_todas_estatisticas(id))
                 scaler.fit(cabecinhas_stats)
                 dados_historicos = scaler.transform(cabecinhas_stats)
 
