@@ -163,7 +163,8 @@ class Database():
 
         try:
             self.cursor.execute("SELECT * FROM users_stats WHERE id_user = ?", (id,))
-            return self.cursor.fetchone()[2:]
+            stats = self.cursor.fetchone()
+            return stats[2:] if stats else None
         except Exception as e:
             print(f'Erro no banco ao buscar estatística de jogador: {e}')
             return None
