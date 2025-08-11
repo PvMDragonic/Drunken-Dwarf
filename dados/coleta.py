@@ -190,6 +190,10 @@ class Coleta():
                         continue
 
                 stats_jogador = db.buscar_estatisticas(id)
+                if not stats_jogador:
+                    # Nunca foi Membro enquanto membro do clã, então não está nos hi-scores para ter stats.
+                    print(f"Jogador ({id} '{nome}') gratuio e sem estatísticas registradas.")
+                    continue
 
                 scaler = StandardScaler()     
                 cabecinhas_stats = np.array(db.buscar_todas_estatisticas(id))
