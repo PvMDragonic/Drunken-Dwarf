@@ -190,7 +190,7 @@ class Coleta():
                         continue
 
                 stats_jogador = db.buscar_estatisticas(id)
-                if not stats_jogador:
+                if stats_jogador is None:
                     # Nunca foi Membro enquanto membro do clã, então não está nos hi-scores para ter stats.
                     print(f"Jogador ({id} '{nome}') gratuio e sem estatísticas registradas.")
                     continue
