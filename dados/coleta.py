@@ -200,8 +200,8 @@ class Coleta():
                 scaler.fit(cabecinhas_stats)
                 dados_historicos = scaler.transform(cabecinhas_stats)
 
-                stats_antigo = np.array(stats_jogador).reshape(1, -1)   # shape (1, 150)
-                ultimo_stats = scaler.transform(stats_antigo)[0]        # shape (150,)
+                stats_antigo = np.array(stats_jogador).reshape(1, -1)   # shape (1, 152)
+                ultimo_stats = scaler.transform(stats_antigo)[0]        # shape (152,)
 
                 similaridades = []
                 for id_conhecido, vetor_conhecido in zip(db.todos_jogadores_com_stats(id), dados_historicos):

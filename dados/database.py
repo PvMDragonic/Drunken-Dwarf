@@ -170,10 +170,10 @@ class Database():
             return None
         
     def buscar_todas_estatisticas(self, excluding_id: int) -> tuple[tuple[int]] | None:
-        """Retorna as 150 estatísticas dos hi-scores de todos, menos de dado id."""
+        """Retorna as 152 estatísticas dos hi-scores de todos, menos de dado id."""
         
         try:
-            columns = ', '.join([f"stat{i+1}" for i in range(150)])
+            columns = ', '.join([f"stat{i+1}" for i in range(152)])
             self.cursor.execute(f"SELECT {columns} FROM users_stats WHERE id_user != ? ORDER BY id_user", (excluding_id, ))
             return self.cursor.fetchall()
         except Exception as e:
@@ -433,13 +433,13 @@ class Database():
         """Adiciona (ou atualiza) as 150 estatísticas de dado jogador por id."""
 
         try:
-            columns = [f"stat{i+1}" for i in range(len(stats))]
+            size = len(stats)
+            columns = [f"stat{i+1}" for i in range(size)]
     
             self.cursor.execute("SELECT id FROM users_stats WHERE id_user = ?", (id_user,))
             row = self.cursor.fetchone()
 
             if row is None:
-                size = len(columns)
                 columns = ["id_user"] + [f"stat{i+1}" for i in range(size)]
                 placeholders = ", ".join(["?"] * (size + 1)) # 150 stats + id_user
                 sql = f"INSERT INTO users_stats ({', '.join(columns)}) VALUES ({placeholders});"
