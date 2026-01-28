@@ -241,7 +241,8 @@ class Database():
                     )
                 ) ud ON u.id = ud.id_user
                 JOIN ranks r ON ud.id_rank = r.id
-                WHERE u.is_free = 1;
+                WHERE u.is_free = 1
+                AND u.in_clan = 1;
             """)
             return self.cursor.fetchall()
         except Exception as e:
