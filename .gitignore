@@ -130,4 +130,4 @@ dmypy.json
 
 # Bot token and data
 dkdw.json
-dkdw.db
+*.db
