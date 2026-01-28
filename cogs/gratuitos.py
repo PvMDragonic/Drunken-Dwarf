@@ -91,7 +91,7 @@ class GratuitosPaginator(View):
 
         await interacao.response.edit_message(embed = self.criar_embed(), view = self)
 
-    @discord.ui.button(label = "Decrescente", style = discord.ButtonStyle.secondary)
+    @discord.ui.button(label = "Crescente", style = discord.ButtonStyle.secondary)
     async def direcao(self, interacao: discord.Interaction, botao: discord.ui.Button):
         self.crescente = not self.crescente
         botao.label = 'Crescente' if self.crescente else 'Decrescente'
@@ -114,7 +114,7 @@ class Gratuitos(commands.Cog):
         db.fechar()
 
         if len(gratuitos) >= 1:
-            gratuitos.sort(key = lambda inativo: inativo[1], reverse = True)
+            gratuitos.sort(key = lambda inativo: inativo[1], reverse = False)
             paginator = GratuitosPaginator(gratuitos)
             await paginator.msg_inicial(ctx)
         else:
