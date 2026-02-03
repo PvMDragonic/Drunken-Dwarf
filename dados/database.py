@@ -116,8 +116,11 @@ class Database():
             print(f'Erro no banco ao buscar todos os jogadores: {e}')
             return None
         
-    def todos_jogadores_com_stats(self, excluding_id: int) -> list[tuple[int, str]] | None:
-        """Retorna (id_user, username) para todo aquele que tiver um registro em 'users_stats'."""
+    def todos_jogadores_com_stats(self, id_excluido: int = -1) -> list[tuple[int, str]] | None:
+        """
+        Retorna (id_user, username) para todos que tiverem algum registro em 'users_stats', 
+        salvo o id passado como parâmetro. Caso não haja parâmetro, retorna todos.
+        """
         
         try:
             self.cursor.execute("""
@@ -135,7 +138,7 @@ class Database():
                     WHERE un2.id_user = un.id_user
                 )
                 ORDER BY un.id_user;
-            """, (excluding_id, ))
+            """, (id_excluido, ))
             return self.cursor.fetchall()
         except Exception as e:
             print(f'Database error: {e}')
