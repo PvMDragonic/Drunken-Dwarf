@@ -30,7 +30,7 @@ class Coleta():
 
         cabecinhas = await Coleta()._listar_membros_cla(completo = True)
         if cabecinhas is None:
-            return 
+            return [], []
         
         db = Database()
         hoje = datetime.today().strftime('%Y-%m-%d')
@@ -94,10 +94,15 @@ class Coleta():
             
     @staticmethod
     async def _listar_membros_cla(completo: bool = False) -> None | list[str] | pd.DataFrame:
-        """Retorna o nome dos membros do clã."""
+        """
+        Retorna [nome_a, nome_b, ...] com o nome dos membros do clã.
+
+        'listar_membros_cla(True)' retorna o seguinte DataFrame: 
+            ["Clanmate", " Clan Rank", " Total XP", " Kills"]       
+        """
 
         try:
-            response = await Fetch().text('http://services.runescape.com/m=clan-hiscores/members_lite.ws?clanName=Drunken+Dwarf')
+            response = await Fetch().text('https://secure.runescape.com/m=clan-hiscores/members_lite.ws?clanName=Drunken+Dwarf')
             if not response:
                 print("Erro ao carregar lista de membros.")
                 return None
@@ -105,7 +110,10 @@ class Coleta():
             request_text = response.replace('\ufffd', ' ')
             cabecinhas = pd.read_csv(StringIO(request_text), header = 0)
             
-            return [cringe['Clanmate'] for _, cringe in cabecinhas.iterrows()] if not completo else cabecinhas
+            if not completo:
+                return [cringe['Clanmate'] for _, cringe in cabecinhas.iterrows()]
+            
+            return cabecinhas
         except Exception as e:
             print(f'Erro ao puxar membros do clã da API: {e}')
             return None
@@ -178,7 +186,7 @@ class Coleta():
 
         for id, nome in desaparecidos:
             try:
-                jogador_ativo = (db.jogador_registrado(nome, True))[2]
+                jogador_ativo, registrado_como_gratuito = (db.jogador_registrado(nome, incluir_arqv = True))[2:]
 
                 # Se o usuário já está desativado, não precisa verificar se ele saiu do clã.
                 if jogador_ativo:
@@ -192,7 +200,9 @@ class Coleta():
                 stats_jogador = db.buscar_estatisticas(id)
                 if stats_jogador is None:
                     # Nunca foi Membro enquanto membro do clã, então não está nos hi-scores para ter stats.
-                    print(f"Jogador ({id} '{nome}') gratuio e sem estatísticas registradas.")
+                    if not registrado_como_gratuito:
+                        db.atualizar_gratuito(true, id)
+                        print(f"Jogador ({id} '{nome}') gratuito e sem estatísticas registradas.")
                     continue
 
                 scaler = StandardScaler()     

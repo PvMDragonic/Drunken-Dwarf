@@ -33,11 +33,11 @@ class Database():
             raise FileNotFoundError(f"Arquivo 'dkdw.sql' não foi encontrado.")
         
     def jogador_registrado(self, nome: str, incluir_arqv: bool = False) -> tuple[int, str, bool] | None:
-        """Retorna (id, nome, no_clan) se o nome estiver registrado e (opcionalmente) no clã."""
+        """Retorna (id, nome, no_clan, gratuito) se o nome estiver registrado e (opcionalmente) no clã."""
 
         try:
             query = """
-                SELECT un.id_user, un.username, u.in_clan
+                SELECT un.id_user, un.username, u.in_clan, u.is_free
                 FROM users_names un
                 JOIN users u ON un.id_user = u.id
                 WHERE un.username = ?
@@ -470,21 +470,28 @@ class Database():
             print(f'Erro no banco ao adicionar novo nome à {nome}: {e}')
             return None
 
-    def atualizar_gratuito(self, status: bool, nome: str):
-        """Atualiza o status de algum usuário para gratuito (True; 1) ou membro (False; 0)."""
+    def atualizar_gratuito(self, status: bool, jogador: str | int):
+        """Atualiza o status de algum usuário para gratuito (True; 1) ou membro (False; 0) via nome (str) ou id (int)."""
 
         try:
-            self.cursor.execute("""
-                UPDATE users
-                SET is_free = ?
-                WHERE id = (
-                    SELECT id_user
-                    FROM users_names
-                    WHERE username = ?
-                    ORDER BY name_date DESC
-                    LIMIT 1
-                )
-            """, (status, nome))
+            if isinstance(jogador, str):
+                self.cursor.execute("""
+                    UPDATE users
+                    SET is_free = ?
+                    WHERE id = (
+                        SELECT id_user
+                        FROM users_names
+                        WHERE username = ?
+                        ORDER BY name_date DESC
+                        LIMIT 1
+                    )
+                """, (status, jogador))
+            elif isinstance(jogador, int):
+                self.cursor.execute("""
+                    UPDATE users
+                    SET is_free = ?
+                    WHERE id = ?
+                """, (status, jogador))
         except Exception as e:
             print(f'Erro no banco ao atualizar o status de gratuito: {e}')
             return None
