@@ -63,7 +63,7 @@ class DrunkenDwarf(commands.Bot):
             )
 
     async def on_ready(self):
-        await self.change_presence(activity = discord.Game(name = 'no melhor clã BR'))
+        await self.change_presence(activity = discord.Game(name = 'O melhor clã brasileiro.'))
         print(f'>> {self.user} on-line!')
 
         # Coletar dados do povo do clã.
