@@ -82,6 +82,11 @@ class Coleta():
 
             ultimo_xp, data_xp, _ = ultimo_registro 
 
+            # Saiu e voltou, então o último xp VAI ser maior que o atual.
+            if db.verificar_retornante(id) and ultimo_xp > xp_atual:
+                db.adicionar_xp(id, rank, xp_atual, kills, hoje)
+                continue
+
             # Não precisa de mais de um registro por dia.
             if data_xp == hoje:
                 continue

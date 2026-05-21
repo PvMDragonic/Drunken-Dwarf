@@ -160,7 +160,27 @@ class Database():
         except Exception as e:
             print(f'Erro no banco ao buscar último XP: {e}')
             return None
-        
+
+    def verificar_retornante(self, id: int) -> bool:
+        """Retorna se o jogador saiu e voltou ao clã desde a última coleta."""
+
+        try:
+            self.cursor.execute("""
+                SELECT (
+                    SELECT COUNT(*) FROM users_leave WHERE id_user = ?
+                ) > 0
+                AND
+                (
+                    SELECT COUNT(*) FROM users_join WHERE id_user = ?
+                ) > (
+                    SELECT COUNT(*) FROM users_leave WHERE id_user = ?
+                );
+            """, (id, id, id,))
+            return bool(self.cursor.fetchone()[0])
+        except Exception as e:
+            print(f'Erro no banco ao verificar se é retornante: {e}')
+            return None
+
     def buscar_estatisticas(self, id: int) -> tuple[int] | None:
         """Retorna as 150 estatísticas dos hi-scores de dado id."""
 
