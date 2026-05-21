@@ -199,7 +199,7 @@ class Coleta():
                     if runemetrics.get('error') != 'NO_PROFILE': # Se não for NO_PROFILE, é porque saiu do clã.
                         db.arquivar_jogador(id, hoje)
                         saidas.append((db.buscar_xp(id), nome))
-                        print(f"Jogador ({id} '{nome}') saiu do clã.")
+                        print(f"Jogador ({id} '{nome}') saiu do clã (runemetrics).")
                         continue
 
                 stats_jogador = db.buscar_estatisticas(id)
@@ -230,7 +230,7 @@ class Coleta():
                     if jogador_ativo:
                         db.arquivar_jogador(id, hoje)
                         saidas.append((db.buscar_xp(id), nome))
-                        print(f"Jogador ({id} '{nome}') saiu do clã.")
+                        print(f"Jogador ({id} '{nome}') saiu do clã (não bateu limite).")
                     continue
 
                 novo_id, novo_nome = best_match
