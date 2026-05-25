@@ -18,6 +18,12 @@ class Moderacao(commands.Cog):
         )
 
         embed.add_field(
+            name = '!double [dd/mm/aaaa] [dd/mm/aaaa]', 
+            value = 'Lista o ranking interno de top 10 membros entre as datas fornecidas.\n᲼᲼', 
+            inline = False
+        )        
+
+        embed.add_field(
             name = '!inativos [dias]', 
             value = 'Lista membros do clã inativos há x dias.\n᲼᲼', 
             inline = False
