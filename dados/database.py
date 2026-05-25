@@ -206,6 +206,64 @@ class Database():
         except Exception as e:
             print(f'Erro no banco ao buscar todas as estatísticas: {e}')
             return None
+
+    def buscar_xp_todos_data(self, date: str) -> dict:
+        """Retorna { 'fulano': xp } de todos os registrados em certa data."""
+
+        print(date)
+
+        try:
+            self.cursor.execute(
+                """
+                    WITH latest_data AS (
+                        SELECT
+                            ud.id_user,
+                            ud.xp,
+                            ud.xp_date,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY ud.id_user
+                                ORDER BY ud.xp_date DESC, ud.id DESC
+                            ) AS rn
+                        FROM users_data ud
+                        INNER JOIN users u
+                            ON u.id = ud.id_user
+                        WHERE
+                            u.in_clan = 1
+                            AND u.is_free = 0
+                            AND ud.xp_date <= ?
+                    ),
+
+                    latest_names AS (
+                        SELECT
+                            un.id_user,
+                            un.username,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY un.id_user
+                                ORDER BY un.name_date DESC, un.id DESC
+                            ) AS rn
+                        FROM users_names un
+                    )
+
+                    SELECT
+                        ln.username,
+                        ld.xp
+                    FROM latest_data ld
+                    INNER JOIN latest_names ln
+                        ON ld.id_user = ln.id_user
+                    WHERE
+                        ld.rn = 1
+                        AND ln.rn = 1
+                    ORDER BY ln.username;
+                """, 
+                (date,)
+            )
+
+            return {
+                username: xp for username, xp in self.cursor.fetchall()
+            }
+        except Exception as e:
+            print(f'Erro no banco ao buscar o XP de todos em certa data: {e}')
+            return None
         
     def buscar_xp(self, id: int) -> int | None:
         """Retorna o registro de XP feito no clã mais recente para dado jogador."""

@@ -26,7 +26,8 @@ class DrunkenDwarf(commands.Bot):
             'cogs.diversos',
             'cogs.inativos',
             'cogs.historico',
-            'cogs.gratuitos'
+            'cogs.gratuitos',
+            'cogs.double_xp'
         )
 
         for ext in extensions:
