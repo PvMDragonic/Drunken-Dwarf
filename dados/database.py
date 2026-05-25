@@ -93,10 +93,12 @@ class Database():
                 self.cursor.execute("""
                     SELECT id_user, username
                     FROM users_names un
-                    WHERE name_date = (
-                        SELECT MAX(name_date)
+                    WHERE id = (
+                        SELECT id
                         FROM users_names
                         WHERE id_user = un.id_user
+                        ORDER BY name_date DESC, id DESC
+                        LIMIT 1
                     )
                 """)
             else:
@@ -105,11 +107,13 @@ class Database():
                     FROM users_names un
                     JOIN users u ON un.id_user = u.id
                     WHERE u.in_clan = 1
-                    AND un.name_date = (
-                        SELECT MAX(name_date)
+                    AND un.id = (
+                        SELECT id
                         FROM users_names
                         WHERE id_user = un.id_user
-                    );
+                        ORDER BY name_date DESC, id DESC
+                        LIMIT 1
+                    )
                 """)
             return self.cursor.fetchall()
         except Exception as e:
