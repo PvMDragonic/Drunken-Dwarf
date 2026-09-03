@@ -200,7 +200,7 @@ class Database():
         """Retorna as 152 estatísticas dos hi-scores de todos, menos de dado id."""
         
         try:
-            columns = ', '.join([f"stat{i+1}" for i in range(152)])
+            columns = ', '.join([f"stat{i+1}" for i in range(154)])
             self.cursor.execute(f"SELECT {columns} FROM users_stats WHERE id_user != ? ORDER BY id_user", (excluding_id, ))
             return self.cursor.fetchall()
         except Exception as e:
