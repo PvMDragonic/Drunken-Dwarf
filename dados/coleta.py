@@ -215,15 +215,25 @@ class Coleta():
                 scaler.fit(cabecinhas_stats)
                 dados_historicos = scaler.transform(cabecinhas_stats)
 
-                stats_antigo = np.array(stats_jogador).reshape(1, -1)   # shape (1, 152)
-                ultimo_stats = scaler.transform(stats_antigo)[0]        # shape (152,)
+                stats_antigo = np.array(stats_jogador).reshape(1, -1)   # shape (1, 154)
+                ultimo_stats = scaler.transform(stats_antigo)[0]        # shape (154,)
 
                 similaridades = []
                 for id_conhecido, vetor_conhecido in zip(db.todos_jogadores_com_stats(id), dados_historicos):
+                    # Pode cair aqui com uma League nova, se estiver F2P quando o evento começar.
+                    if np.isnan(ultimo_stats[-2]) and np.isnan(ultimo_stats[-1]):
+                        ultimo_stats[-2], ultimo_stats[-1] = -1, 0
+                    if np.isnan(vetor_conhecido[-2]) and np.isnan(vetor_conhecido[-1]):
+                        vetor_conhecido[-2], vetor_conhecido[-1] = -1, 0
+
                     sim = 1 - cosine(ultimo_stats, vetor_conhecido)
                     similaridades.append((id_conhecido, sim))
 
                 best_match, score = max(similaridades, key = lambda x: x[1])
+                if np.isnan(score):
+                    # Fallback caso algum nulo em 'users_stats' ainda passe.
+                    print(f"Erro de similaridade por NaN para {nome}!")
+                    continue
 
                 # Se sair do clã e mudar de nome logo em seguida, cai aqui.
                 if score < limite_similaridade(stats_jogador[1]):
