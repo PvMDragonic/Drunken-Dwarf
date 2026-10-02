@@ -206,7 +206,7 @@ class Coleta():
                 if stats_jogador is None:
                     # Nunca foi Membro enquanto membro do clã, então não está nos hi-scores para ter stats.
                     if not registrado_como_gratuito:
-                        db.atualizar_gratuito(true, id)
+                        db.atualizar_gratuito(True, id)
                         print(f"Jogador ({id} '{nome}') gratuito e sem estatísticas registradas.")
                     continue
 
