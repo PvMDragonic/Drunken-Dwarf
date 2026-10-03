@@ -61,7 +61,7 @@ class Coleta():
             id = (db.jogador_registrado(nome) or db.registrar_jogador(nome, hoje))[0]
 
             # Nome novo que não estava registrado até então.
-            if not any(nome in entrada for entrada in cabecinhas_registradas):
+            if not any(nome in (id, cabecinha) for id, cabecinha in cabecinhas_registradas):
                 nomes_passados = db.buscar_todos_nomes(id)
                 nome_recente = nomes_passados[-1]
 
