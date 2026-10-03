@@ -218,11 +218,13 @@ class Coleta():
                 stats_antigo = np.array(stats_jogador).reshape(1, -1)   # shape (1, 154)
                 ultimo_stats = scaler.transform(stats_antigo)[0]        # shape (154,)
 
+                # Pode cair aqui com uma League nova, se estiver F2P quando o evento começar.
+                if np.isnan(ultimo_stats[-2]) and np.isnan(ultimo_stats[-1]):
+                    ultimo_stats[-2], ultimo_stats[-1] = -1, 0
+
                 similaridades = []
                 for id_conhecido, vetor_conhecido in zip(db.todos_jogadores_com_stats(id), dados_historicos):
-                    # Pode cair aqui com uma League nova, se estiver F2P quando o evento começar.
-                    if np.isnan(ultimo_stats[-2]) and np.isnan(ultimo_stats[-1]):
-                        ultimo_stats[-2], ultimo_stats[-1] = -1, 0
+                    # Vide acima.
                     if np.isnan(vetor_conhecido[-2]) and np.isnan(vetor_conhecido[-1]):
                         vetor_conhecido[-2], vetor_conhecido[-1] = -1, 0
 
